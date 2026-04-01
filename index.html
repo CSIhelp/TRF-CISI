@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Leave Request — Stewrd</title>
+  <link rel="icon" type="image/x-icon" href="./favicon.ico" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:        #2FAAE1;
+      --brand-dark:   #1d8ec4;
+      --brand-darker: #1677a8;
+      --brand-light:  #e8f7fd;
+      --brand-mid:    #bce8f8;
+      --brand-text:   #0d5f82;
+
+      --bg: #f4f9fc;
+      --topbar-bg: #ffffff;
+      --topbar-border: #d6edf7;
+      --card-bg: #ffffff;
+      --card-border: #d6edf7;
+      --text-primary: #0d2d3a;
+      --text-secondary: #5a8fa4;
+      --text-label: #1e5570;
+      --input-bg: #f0f8fd;
+      --input-border: #b8dff0;
+      --input-focus-shadow: rgba(47,170,225,0.15);
+      --section-border: #d6edf7;
+      --note-color: #7ab5ce;
+    }
+
+    body.dark {
+      --bg: #071820;
+      --topbar-bg: #0d2535;
+      --topbar-border: #1a3f55;
+      --card-bg: #0d2535;
+      --card-border: #1a3f55;
+      --text-primary: #e0f4fd;
+      --text-secondary: #7ab5ce;
+      --text-label: #a8d8ee;
+      --input-bg: #071820;
+      --input-border: #1a3f55;
+      --input-focus-shadow: rgba(47,170,225,0.25);
+      --section-border: #1a3f55;
+      --note-color: #3d7a96;
+    }
+
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; color: var(--text-primary); transition: background 0.2s, color 0.2s; }
+
+    .topbar { background: var(--topbar-bg); border-bottom: 1px solid var(--topbar-border); padding: 0 32px; height: 60px; display: flex; align-items: center; gap: 12px; transition: background 0.2s, border-color 0.2s; }
+    
+    /* Updated Brand Name CSS for the Logo Image */
+    .brand-name { display: flex; align-items: center; }
+    .brand-name img { max-height: 34px; width: auto; display: block; }
+    
+    .brand-sep  { width: 1px; height: 18px; background: var(--topbar-border); margin: 0 4px; }
+    .brand-module { font-size: 13px; color: var(--text-secondary); }
+    .topbar-right { margin-left: auto; }
+    .logo-text { font-size: 15px; font-weight: 600; color: #fff; letter-spacing: .5px; }
+    .logo-text span { color: #64b5f6; }
+
+    .dark-toggle { background: none; border: 1px solid var(--input-border); border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 12px; font-weight: 500; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; transition: all 0.15s; font-family: 'Inter', sans-serif; }
+    .dark-toggle:hover { border-color: var(--brand); color: var(--brand); }
+
+    .page { max-width: 640px; margin: 40px auto; padding: 0 20px 60px; }
+    .page-heading { font-size: 20px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+    .page-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 28px; }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 32px; transition: background 0.2s, border-color 0.2s; box-shadow: 0 2px 12px rgba(47,170,225,0.07); }
+    .section { margin-bottom: 28px; }
+    .section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--brand); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--section-border); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 480px) { .grid-2 { grid-template-columns: 1fr; } .card { padding: 24px 18px; } }
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    label { font-size: 12px; font-weight: 500; color: var(--text-label); }
+    .req { color: var(--brand); }
+    input, select, textarea { background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 7px; padding: 9px 12px; font-family: 'Inter', sans-serif; font-size: 13.5px; color: var(--text-primary); width: 100%; outline: none; transition: border-color 0.15s, box-shadow 0.15s, background 0.2s; -webkit-appearance: none; }
+    input:focus, select:focus, textarea:focus { border-color: var(--brand); background: var(--card-bg); box-shadow: 0 0 0 3px var(--input-focus-shadow); }
+    input::placeholder, textarea::placeholder { color: var(--text-secondary); }
+    input:disabled { opacity: 0.6; cursor: not-allowed; }
+    select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%232FAAE1' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 34px; }
+    select option { background: var(--card-bg); color: var(--text-primary); }
+    textarea { resize: vertical; min-height: 84px; line-height: 1.55; }
+
+    .pin-wrap { position: relative; }
+    .pin-wrap input { padding-right: 38px; letter-spacing: 3px; }
+    .pin-eye { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 15px; padding: 2px; line-height: 1; transition: color 0.15s; }
+    .pin-eye:hover { color: var(--brand); }
+
+    .verify-row { display: flex; gap: 8px; margin-top: 10px; }
+    .btn-verify { padding: 9px 16px; background: var(--brand); border: none; border-radius: 7px; color: #fff; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s; white-space: nowrap; flex-shrink: 0; }
+    .btn-verify:hover { background: var(--brand-dark); }
+    .btn-verify:disabled { background: var(--brand-mid); cursor: not-allowed; }
+
+    .employee-card { display: none; margin-top: 12px; background: #e8f7fd; border: 1px solid var(--brand-mid); border-radius: 10px; padding: 14px 16px; gap: 12px; }
+    body.dark .employee-card { background: #0d2535; border-color: #1d5e7a; }
+    .employee-card.show { display: flex; align-items: flex-start; }
+    .employee-card-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+    .employee-card-info { flex: 1; }
+    .employee-card-name { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+    .employee-card-meta { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+    .sil-badge { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid var(--brand-mid); border-radius: 20px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: var(--brand-text); }
+    body.dark .sil-badge { background: #071820; border-color: #1d5e7a; color: #7ad4f0; }
+    .sil-badge.low { background: #fefce8; border-color: #fde68a; color: #92400e; }
+    body.dark .sil-badge.low { background: #422006; border-color: #92400e; color: #fde68a; }
+    .sil-badge.empty { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+    body.dark .sil-badge.empty { background: #450a0a; border-color: #991b1b; color: #fca5a5; }
+
+    .credits-info { display: none; margin-top: 6px; background: var(--brand-light); border: 1px solid var(--brand-mid); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--brand-text); line-height: 1.5; }
+    body.dark .credits-info { background: #0d2535; border-color: #1d5e7a; color: #7ad4f0; }
+    .credits-info.show { display: block; }
+
+    .sil-amount-field { display: none; margin-top: 10px; }
+    .sil-amount-field.show { display: flex; flex-direction: column; gap: 5px; }
+    .sil-amount-hint { font-size: 11px; color: var(--note-color); margin-top: 4px; line-height: 1.5; }
+    .sil-amount-hint strong { color: var(--text-primary); }
+    .sil-input-wrap { position: relative; }
+    .sil-input-wrap input { padding-right: 60px; }
+    .sil-unit { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--text-secondary); font-weight: 500; pointer-events: none; }
+    .sil-remaining { display: none; margin-top: 6px; padding: 8px 12px; border-radius: 7px; font-size: 12px; font-weight: 500; }
+    .sil-remaining.ok   { display: block; background: #e8f7fd; border: 1px solid var(--brand-mid); color: var(--brand-text); }
+    .sil-remaining.warn { display: block; background: #fefce8; border: 1px solid #fde68a; color: #92400e; }
+    .sil-remaining.err  { display: block; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    body.dark .sil-remaining.ok   { background: #071820; border-color: #1d5e7a; color: #7ad4f0; }
+    body.dark .sil-remaining.warn { background: #422006; border-color: #92400e; color: #fde68a; }
+    body.dark .sil-remaining.err  { background: #450a0a; border-color: #991b1b; color: #fca5a5; }
+
+    .employee-error { display: none; margin-top: 10px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; font-size: 12.5px; color: #991b1b; font-weight: 500; }
+    body.dark .employee-error { background: #450a0a; border-color: #991b1b; color: #fca5a5; }
+    .employee-error.show { display: block; }
+
+    .verify-loading { display: none; margin-top: 10px; font-size: 12px; color: var(--text-secondary); align-items: center; gap: 6px; }
+    .verify-loading.show { display: flex; }
+    .mini-spinner { display: inline-block; width: 11px; height: 11px; border: 2px solid var(--input-border); border-top-color: var(--brand); border-radius: 50%; animation: spin 0.65s linear infinite; }
+
+    .duration-banner { display: none; align-items: center; gap: 10px; margin-top: 10px; margin-bottom: 14px; padding: 10px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 500; line-height: 1.4; }
+    .duration-banner.info    { background: var(--brand-light); border: 1px solid var(--brand-mid); color: var(--brand-text); }
+    .duration-banner.warning { background: #fefce8; border: 1px solid #fde68a; color: #92400e; }
+    .duration-banner.error   { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    body.dark .duration-banner.info    { background: #0d2535; border-color: #1d5e7a; color: #7ad4f0; }
+    body.dark .duration-banner.warning { background: #422006; border-color: #92400e; color: #fde68a; }
+    body.dark .duration-banner.error   { background: #450a0a; border-color: #991b1b; color: #fca5a5; }
+    .duration-banner.show { display: flex; }
+    .duration-banner-icon { font-size: 16px; flex-shrink: 0; }
+
+    .file-drop { border: 1.5px dashed var(--input-border); border-radius: 7px; background: var(--input-bg); padding: 20px 16px; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; position: relative; }
+    .file-drop:hover, .file-drop.dragover { border-color: var(--brand); background: var(--brand-light); }
+    body.dark .file-drop:hover, body.dark .file-drop.dragover { background: #0d2535; }
+    .file-drop input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: none; padding: 0; background: none; }
+    .file-drop-icon { font-size: 22px; margin-bottom: 6px; display: block; }
+    .file-drop-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+    .file-drop-text strong { color: var(--brand); font-weight: 500; }
+    .file-drop-hint { font-size: 11px; color: var(--note-color); margin-top: 4px; }
+    .file-chip { display: none; align-items: center; gap: 8px; margin-top: 8px; background: var(--brand-light); border: 1px solid var(--brand-mid); border-radius: 6px; padding: 7px 10px; font-size: 12px; color: var(--brand-text); }
+    body.dark .file-chip { background: #0d2535; border-color: #1d5e7a; color: #7ad4f0; }
+    .file-chip.show { display: flex; }
+    .file-chip-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-chip-remove { background: none; border: none; cursor: pointer; color: var(--brand-mid); font-size: 14px; line-height: 1; padding: 0; transition: color 0.15s; flex-shrink: 0; }
+    .file-chip-remove:hover { color: var(--brand-dark); }
+
+    .submit-row { margin-top: 28px; display: flex; flex-direction: column; gap: 10px; }
+    .btn-submit { width: 100%; padding: 11px 20px; background: var(--brand); border: none; border-radius: 8px; color: #fff; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+    .btn-submit:hover { background: var(--brand-dark); }
+    .btn-submit:active { transform: scale(0.99); }
+    .btn-submit:disabled { background: var(--brand-mid); cursor: not-allowed; }
+    .note { text-align: center; font-size: 11.5px; color: var(--note-color); }
+
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #0d2535; color: #fff; font-size: 13px; font-weight: 500; padding: 11px 20px; border-radius: 8px; display: flex; align-items: center; gap: 8px; z-index: 999; opacity: 0; transition: transform 0.35s ease, opacity 0.3s; white-space: nowrap; box-shadow: 0 4px 16px rgba(47,170,225,0.2); }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.success { background: var(--brand-darker); }
+    .toast.error { background: #991b1b; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; animation: spin 0.65s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand-name">
+        <img src="stewrd-logo.png" alt="Stewrd Logo">
+    </div>
+    <div class="brand-sep"></div>
+    <div class="brand-module">Leave Management</div>
+    <div class="topbar-right">
+      <button class="dark-toggle" id="darkToggle" onclick="toggleDark()">
+        <span id="darkIcon">🌙</span>
+        <span id="darkLabel">Dark</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="page">
+    <div class="page-heading">Leave Request</div>
+    <div class="page-sub">Fill out the form below to submit your leave application.</div>
+
+    <div class="card">
+      <form id="leaveForm" novalidate>
+
+        <div class="section">
+          <div class="section-title">Employee Information</div>
+          <div class="grid-2">
+            <div class="field">
+              <label>Full Name <span class="req">*</span></label>
+              <input type="text" id="employee_name" placeholder="Enter your name" required />
+            </div>
+            <div class="field">
+              <label>Employee PIN <span class="req">*</span></label>
+              <div class="pin-wrap">
+                <input type="password" id="employee_pin" placeholder="••••" maxlength="8" required />
+                <button type="button" class="pin-eye" onclick="togglePin(this)">👁</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="verify-row">
+            <button type="button" class="btn-verify" id="verifyBtn" onclick="verifyEmployee()">🔍 Verify Identity</button>
+          </div>
+
+          <div class="verify-loading" id="verifyLoading">
+            <span class="mini-spinner"></span>
+            <span>Verifying employee details…</span>
+          </div>
+
+          <div class="employee-card" id="employeeCard">
+            <div class="employee-card-icon">✅</div>
+            <div class="employee-card-info">
+              <div class="employee-card-name" id="verifiedName"></div>
+              <div class="employee-card-meta" id="verifiedMeta"></div>
+              <div class="sil-badge" id="silBadge">
+                <span>🏖️</span>
+                <span id="silText"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="employee-error" id="employeeError"></div>
+
+          <div class="grid-2" style="margin-top:16px">
+            <div class="field">
+              <label>Department <span class="req">*</span></label>
+              <select id="department" required>
+                <option value="" disabled selected>Select department</option>
+                <option value="HR">Human Resources</option>
+                <option value="Finance">Finance</option>
+                <option value="Operations">Operations</option>
+                <option value="Sales">Sales</option>
+                <option value="Marketing">Marketing</option>
+                <option value="IT">IT</option>
+                <option value="Admin">Admin</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Job Title</label>
+              <input type="text" id="job_title" placeholder="e.g. HR Specialist" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Email Address <span class="req">*</span></label>
+            <input type="email" id="email" placeholder="your.email@company.com" required />
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Leave Details</div>
+
+          <div class="field">
+            <label>Leave Type <span class="req">*</span></label>
+            <select id="request_type" required>
+              <option value="" disabled selected>Select leave type</option>
+              <option value="Sick">Sick Leave</option>
+              <option value="Vacation">Vacation Leave</option>
+              <option value="Emergency">Emergency Leave</option>
+              <option value="Maternity">Maternity Leave</option>
+              <option value="Paternity">Paternity Leave</option>
+              <option value="Bereavement">Bereavement Leave</option>
+              <option value="Unpaid">Unpaid Leave</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label>Start Date & Time <span class="req">*</span></label>
+              <input type="datetime-local" id="start_time" required />
+            </div>
+            <div class="field">
+              <label>End Date & Time <span class="req">*</span></label>
+              <input type="datetime-local" id="end_time" required />
+            </div>
+          </div>
+
+          <div class="duration-banner" id="durationBanner">
+            <span class="duration-banner-icon" id="durationIcon"></span>
+            <span id="durationMsg"></span>
+          </div>
+
+          <div class="field">
+            <label>Use Leave Credits? <span class="req">*</span></label>
+            <select id="use_credits" required onchange="updateCreditsInfo()">
+              <option value="" disabled selected>Select an option</option>
+              <option value="Yes">Yes — deduct from my leave credits</option>
+              <option value="No">No — do not use leave credits</option>
+            </select>
+            <div class="credits-info" id="creditsInfo"></div>
+
+            <div class="sil-amount-field" id="silAmountField">
+              <label>SIL Credits to Use <span class="req">*</span></label>
+              <div class="sil-input-wrap">
+                <input
+                  type="number"
+                  id="sil_amount"
+                  min="0.5"
+                  step="0.5"
+                  placeholder="e.g. 1.0"
+                  oninput="validateSilAmount()"
+                />
+                <span class="sil-unit">day(s)</span>
+              </div>
+              <div class="sil-amount-hint">
+                Enter in 0.5 increments. You have <strong id="silAvailable">0</strong> SIL day(s) available.
+              </div>
+              <div class="sil-remaining" id="silRemaining"></div>
+            </div>
+          </div>
+
+          <div class="field" style="margin-bottom:0">
+            <label>Reason / Notes</label>
+            <textarea id="reason" placeholder="Optional — briefly describe the reason for your leave…"></textarea>
+          </div>
+        </div>
+
+        <div class="section" style="margin-bottom:0">
+          <div class="section-title">Supporting Document</div>
+          <div class="field" style="margin-bottom:0">
+            <label>Upload File <span style="color:var(--note-color);font-weight:400">(PDF, PNG, DOC/DOCX — max 10MB)</span></label>
+            <div class="file-drop" id="fileDrop">
+              <input type="file" id="supporting_doc" accept=".pdf,.png,.doc,.docx" />
+              <span class="file-drop-icon">📎</span>
+              <div class="file-drop-text"><strong>Click to upload</strong> or drag and drop</div>
+              <div class="file-drop-hint">PDF, PNG, DOC, DOCX — max 10MB</div>
+            </div>
+            <div class="file-chip" id="fileChip">
+              <span>📄</span>
+              <span class="file-chip-name" id="fileName"></span>
+              <button type="button" class="file-chip-remove" onclick="clearFile()">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <input type="hidden" id="company_id" value="1710054938201" />
+
+        <div class="submit-row">
+          <button type="submit" class="btn-submit" id="submitBtn">Submit Leave Request</button>
+          <div class="note">🔒 Securely submitted through HR systems</div>
+        </div>
+        <div style="text-align:center;margin-top:16px;">
+          <img src="stewrd-logo.png" alt="Stewrd Logo" style="height:40px;object-fit:contain;opacity:0.7;" />
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <span id="toastIcon"></span>
+    <span id="toastMsg"></span>
+  </div>
+
+  <script>
+    const WEBHOOK    = "https://primary-production-a810.up.railway.app/webhook/ddeb7597-8a11-4502-bb87-6f0e803a1c5f";
+    const VERIFY_URL = "https://primary-production-a810.up.railway.app/webhook/verify-employee";
+    const MAX_DAYS   = 14;
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    const ALLOWED_EXTS  = ['.pdf', '.png', '.doc', '.docx'];
+    const ALLOWED_TYPES = [
+      'application/pdf',
+      'image/png',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+
+    let employeeVerified = false;
+    let currentSIL = 0;
+
+    // ── Dark mode ──
+    function toggleDark() {
+      const isDark = document.body.classList.toggle('dark');
+      document.getElementById('darkIcon').textContent  = isDark ? '☀️' : '🌙';
+      document.getElementById('darkLabel').textContent = isDark ? 'Light' : 'Dark';
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    }
+    if (localStorage.getItem('theme') === 'dark') {
+      document.body.classList.add('dark');
+      document.getElementById('darkIcon').textContent  = '☀️';
+      document.getElementById('darkLabel').textContent = 'Light';
+    }
+
+    function togglePin(btn) {
+      const input = document.getElementById('employee_pin');
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.textContent = show ? '🙈' : '👁';
+    }
+
+    // ── File Validation ──
+    function validateFile(f) {
+      const ext = '.' + f.name.split('.').pop().toLowerCase();
+      if (!ALLOWED_EXTS.includes(ext)) {
+        showToast('Only PDF, PNG, DOC, and DOCX files are allowed.', 'error');
+        return false;
+      }
+      if (f.type && !ALLOWED_TYPES.includes(f.type)) {
+        showToast('Only PDF, PNG, DOC, and DOCX files are allowed.', 'error');
+        return false;
+      }
+      if (f.size > MAX_FILE_SIZE) {
+        showToast('File must be 10MB or less.', 'error');
+        return false;
+      }
+      return true;
+    }
+
+    // ── SIL Amount Validation ──
+    function validateSilAmount() {
+      const silInput     = document.getElementById('sil_amount');
+      const silRemaining = document.getElementById('silRemaining');
+      const entered      = parseFloat(silInput.value) || 0;
+      const remaining    = currentSIL - entered;
+
+      if (entered <= 0) {
+        silInput.style.borderColor = '#dc2626';
+        silRemaining.className = 'sil-remaining err';
+        silRemaining.textContent = '⚠️ Please enter a valid amount greater than 0.';
+        return;
+      }
+      if (entered > currentSIL) {
+        silInput.style.borderColor = '#dc2626';
+        silRemaining.className = 'sil-remaining err';
+        silRemaining.textContent = `❌ Exceeds available balance. You only have ${currentSIL.toFixed(1)} SIL day(s).`;
+        return;
+      }
+      if ((entered * 2) % 1 !== 0) {
+        silInput.style.borderColor = '#f59e0b';
+        silRemaining.className = 'sil-remaining warn';
+        silRemaining.textContent = `⚠️ Please use 0.5 increments (e.g. 0.5, 1.0, 1.5).`;
+        return;
+      }
+      silInput.style.borderColor = '';
+      if (remaining <= 1) {
+        silRemaining.className = 'sil-remaining warn';
+        silRemaining.textContent = `⚠️ After deduction: ${remaining.toFixed(1)} SIL day(s) remaining.`;
+      } else {
+        silRemaining.className = 'sil-remaining ok';
+        silRemaining.textContent = `✅ After deduction: ${remaining.toFixed(1)} SIL day(s) remaining.`;
+      }
+    }
+
+    // ── Credits Info ──
+    function updateCreditsInfo() {
+      const val          = document.getElementById('use_credits').value;
+      const box          = document.getElementById('creditsInfo');
+      const silField     = document.getElementById('silAmountField');
+      const silAvailable = document.getElementById('silAvailable');
+      const silInput     = document.getElementById('sil_amount');
+      const silRemaining = document.getElementById('silRemaining');
+
+      if (val === 'Yes') {
+        box.innerHTML = `🏖️ <strong>${currentSIL.toFixed(1)} SIL day${currentSIL !== 1 ? 's' : ''}</strong> currently available. Enter how many credits you want to use below.`;
+        box.className = 'credits-info show';
+        silField.className         = 'sil-amount-field show';
+        silAvailable.textContent   = currentSIL.toFixed(1);
+        silInput.max               = currentSIL;
+        silInput.value             = '';
+        silInput.style.borderColor = '';
+        silRemaining.className     = 'sil-remaining';
+      } else if (val === 'No') {
+        box.innerHTML = `ℹ️ Leave credits will <strong>not</strong> be deducted. This leave may be treated as unpaid depending on HR approval.`;
+        box.className = 'credits-info show';
+        silField.className         = 'sil-amount-field';
+        silInput.value             = '';
+        silInput.style.borderColor = '';
+        silRemaining.className     = 'sil-remaining';
+      } else {
+        box.className          = 'credits-info';
+        silField.className     = 'sil-amount-field';
+        silInput.value         = '';
+        silRemaining.className = 'sil-remaining';
+      }
+    }
+
+    // ── Verify Employee ──
+    async function verifyEmployee() {
+      const name = document.getElementById('employee_name').value.trim();
+      const pin  = document.getElementById('employee_pin').value.trim();
+
+      if (!name) return showToast('Please enter your full name first.', 'error');
+      if (!pin)  return showToast('Please enter your PIN first.', 'error');
+
+      const card    = document.getElementById('employeeCard');
+      const error   = document.getElementById('employeeError');
+      const loading = document.getElementById('verifyLoading');
+      const btn     = document.getElementById('verifyBtn');
+
+      card.classList.remove('show');
+      error.classList.remove('show');
+      loading.classList.add('show');
+      btn.disabled = true;
+      employeeVerified = false;
+
+      try {
+        const res  = await fetch(`${VERIFY_URL}?pin=${encodeURIComponent(pin)}`);
+        const raw  = await res.json();
+        const data = Array.isArray(raw) ? raw[0] : raw;
+        loading.classList.remove('show');
+        btn.disabled = false;
+
+        if (data.found && data.name.trim().toLowerCase() === name.trim().toLowerCase()) {
+          employeeVerified = true;
+          currentSIL = parseFloat(data.sil) || 0;
+
+          document.getElementById('verifiedName').textContent = data.name;
+          document.getElementById('verifiedMeta').textContent = `${data.job_title || '—'} · ${data.department || '—'}`;
+
+          const silBadge = document.getElementById('silBadge');
+          document.getElementById('silText').textContent = `${currentSIL.toFixed(1)} SIL day${currentSIL !== 1 ? 's' : ''} remaining`;
+          silBadge.className = currentSIL === 0 ? 'sil-badge empty' : currentSIL <= 2 ? 'sil-badge low' : 'sil-badge';
+
+          const deptMap = {
+            'Human Resources': 'HR', 'HR': 'HR', 'Finance': 'Finance',
+            'Engineering': 'Engineering', 'Operations': 'Operations',
+            'Sales': 'Sales', 'Marketing': 'Marketing', 'IT': 'IT',
+            'Admin': 'Admin', 'Accounting': 'Accounting', 'Productions': 'Productions'
+          };
+          if (data.department) document.getElementById('department').value = deptMap[data.department] || data.department;
+          if (data.job_title)  document.getElementById('job_title').value  = data.job_title;
+          if (data.email)      document.getElementById('email').value      = data.email;
+
+          card.classList.add('show');
+
+          if (document.getElementById('use_credits').value === 'Yes') {
+            updateCreditsInfo();
+          }
+
+        } else if (data.found) {
+          error.textContent = '❌ Name does not match our records. Please check your name and PIN.';
+          error.classList.add('show');
+        } else {
+          error.textContent = '❌ Employee not found. Please check your name and PIN and try again.';
+          error.classList.add('show');
+        }
+      } catch {
+        loading.classList.remove('show');
+        btn.disabled = false;
+        error.textContent = '❌ Could not verify at this time. Please try again.';
+        error.classList.add('show');
+      }
+    }
+
+    document.getElementById('employee_pin').addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); verifyEmployee(); }
+    });
+
+    ['employee_name', 'employee_pin'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        employeeVerified = false;
+        currentSIL = 0;
+        document.getElementById('employeeCard').classList.remove('show');
+        document.getElementById('employeeError').classList.remove('show');
+        document.getElementById('silAmountField').className = 'sil-amount-field';
+        document.getElementById('sil_amount').value = '';
+        document.getElementById('silRemaining').className = 'sil-remaining';
+      });
+    });
+
+    // ── Duration check ──
+    function checkDuration() {
+      const start  = document.getElementById('start_time').value;
+      const end    = document.getElementById('end_time').value;
+      const banner = document.getElementById('durationBanner');
+      const icon   = document.getElementById('durationIcon');
+      const msg    = document.getElementById('durationMsg');
+
+      if (!start || !end) { banner.className = 'duration-banner'; return; }
+
+      const startDate = new Date(start);
+      const endDate   = new Date(end);
+      if (endDate <= startDate) { banner.className = 'duration-banner'; return; }
+
+      const diffDays = (endDate - startDate) / (1000 * 60 * 60 * 24);
+      const rounded  = Math.ceil(diffDays);
+
+      if (diffDays > MAX_DAYS) {
+        icon.textContent = '🚫';
+        msg.textContent  = `Leave duration is ${rounded} day${rounded > 1 ? 's' : ''} — exceeds the 14-day maximum. Please adjust your dates or contact HR.`;
+        banner.className = 'duration-banner error show';
+      } else if (diffDays > 7) {
+        icon.textContent = '⚠️';
+        msg.textContent  = `Leave duration is ${rounded} day${rounded > 1 ? 's' : ''} — approaching the 14-day limit.`;
+        banner.className = 'duration-banner warning show';
+      } else {
+        icon.textContent = '📅';
+        msg.textContent  = `Leave duration: ${rounded} day${rounded > 1 ? 's' : ''}.`;
+        banner.className = 'duration-banner info show';
+      }
+    }
+
+    document.getElementById('start_time').addEventListener('change', checkDuration);
+    document.getElementById('end_time').addEventListener('change', checkDuration);
+
+    // ── File upload ──
+    const fileInput = document.getElementById('supporting_doc');
+    const fileDrop  = document.getElementById('fileDrop');
+    const fileChip  = document.getElementById('fileChip');
+    const fileName  = document.getElementById('fileName');
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) {
+        if (!validateFile(fileInput.files[0])) {
+          fileInput.value = '';
+          return;
+        }
+        showFile(fileInput.files[0]);
+      }
+    });
+
+    fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('dragover'); });
+    fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('dragover'));
+    fileDrop.addEventListener('drop', e => {
+      e.preventDefault();
+      fileDrop.classList.remove('dragover');
+      const f = e.dataTransfer.files[0];
+      if (f) {
+        if (!validateFile(f)) return;
+        fileInput.files = e.dataTransfer.files;
+        showFile(f);
+      }
+    });
+
+    function showFile(f) {
+      fileName.textContent = f.name;
+      fileChip.classList.add('show');
+      fileDrop.style.display = 'none';
+    }
+
+    function clearFile() {
+      fileInput.value = '';
+      fileChip.classList.remove('show');
+      fileDrop.style.display = '';
+    }
+
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      document.getElementById('toastIcon').textContent = type === 'success' ? '✔' : '✖';
+      document.getElementById('toastMsg').textContent = msg;
+      t.className = `toast ${type} show`;
+      setTimeout(() => t.classList.remove('show'), 4500);
+    }
+
+    // ── Submit ──
+    document.getElementById('leaveForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const get = id => document.getElementById(id).value.trim();
+
+      if (!employeeVerified) return showToast('Please verify your identity first.', 'error');
+
+      const values = {
+        employee_name: get('employee_name'),
+        employee_pin:  get('employee_pin'),
+        department:    get('department'),
+        job_title:     get('job_title'),
+        email:         get('email'),
+        request_type:  get('request_type'),
+        use_credits:   get('use_credits'),
+        sil_amount:    get('sil_amount') || '0',
+        start_time:    get('start_time'),
+        end_time:      get('end_time'),
+        reason:        get('reason') || "", // Explicitly returns "" if left blank
+        company_id:    get('company_id'),
+      };
+
+      if (!values.employee_name) return showToast('Please enter your full name.', 'error');
+      if (!values.employee_pin)  return showToast('Please enter your PIN.', 'error');
+      if (!values.department)    return showToast('Please select your department.', 'error');
+      if (!values.email || !values.email.includes('@')) return showToast('Please enter a valid email.', 'error');
+      if (!values.request_type)  return showToast('Please select a leave type.', 'error');
+      if (!values.start_time)    return showToast('Please enter the start date & time.', 'error');
+      if (!values.end_time)      return showToast('Please enter the end date & time.', 'error');
+      if (new Date(values.end_time) <= new Date(values.start_time))
+        return showToast('End time must be after start time.', 'error');
+
+      const diffDays = (new Date(values.end_time) - new Date(values.start_time)) / (1000 * 60 * 60 * 24);
+      if (diffDays > MAX_DAYS) return showToast('Leave duration exceeds 14 days. Please adjust your dates.', 'error');
+
+      if (!values.use_credits) return showToast('Please select whether to use leave credits.', 'error');
+
+      if (values.use_credits === 'Yes') {
+        const silAmt = parseFloat(values.sil_amount) || 0;
+        if (silAmt <= 0)
+          return showToast('Please enter how many SIL credits to use.', 'error');
+        if ((silAmt * 2) % 1 !== 0)
+          return showToast('SIL amount must be in 0.5 increments (e.g. 0.5, 1.0, 1.5).', 'error');
+        if (silAmt > currentSIL)
+          return showToast(`You only have ${currentSIL.toFixed(1)} SIL day(s) available.`, 'error');
+      }
+
+      if (fileInput.files[0] && !validateFile(fileInput.files[0])) return;
+
+      const fd = new FormData();
+      Object.entries(values).forEach(([k, v]) => {
+        if (k === 'start_time' || k === 'end_time') {
+          fd.append(k, new Date(v).toISOString());
+        } else {
+          fd.append(k, v);
+        }
+      });
+
+      if (fileInput.files[0]) {
+        fd.append('supporting_doc', fileInput.files[0], fileInput.files[0].name);
+      }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Submitting…';
+
+      try {
+        const res = await fetch(WEBHOOK, { method: 'POST', body: fd });
+        if (res.ok) {
+          showToast('Leave request submitted successfully!', 'success');
+          document.getElementById('leaveForm').reset();
+          clearFile();
+          employeeVerified = false;
+          currentSIL = 0;
+          document.getElementById('employeeCard').classList.remove('show');
+          document.getElementById('employeeError').classList.remove('show');
+          document.getElementById('durationBanner').className = 'duration-banner';
+          document.getElementById('creditsInfo').className = 'credits-info';
+          document.getElementById('silAmountField').className = 'sil-amount-field';
+          document.getElementById('sil_amount').value = '';
+          document.getElementById('silRemaining').className = 'sil-remaining';
+        } else {
+          showToast(`Submission failed (${res.status}). Please try again.`, 'error');
+        }
+      } catch {
+        showToast('Network error. Please check your connection.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Submit Leave Request';
+      }
+    });
+  </script>
+</body>
+</html>
