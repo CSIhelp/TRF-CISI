@@ -51,16 +51,11 @@
     body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; color: var(--text-primary); transition: background 0.2s, color 0.2s; }
 
     .topbar { background: var(--topbar-bg); border-bottom: 1px solid var(--topbar-border); padding: 0 32px; height: 60px; display: flex; align-items: center; gap: 12px; transition: background 0.2s, border-color 0.2s; }
-    
-    /* Updated Brand Name CSS for the Logo Image */
     .brand-name { display: flex; align-items: center; }
     .brand-name img { max-height: 34px; width: auto; display: block; }
-    
     .brand-sep  { width: 1px; height: 18px; background: var(--topbar-border); margin: 0 4px; }
     .brand-module { font-size: 13px; color: var(--text-secondary); }
     .topbar-right { margin-left: auto; }
-    .logo-text { font-size: 15px; font-weight: 600; color: #fff; letter-spacing: .5px; }
-    .logo-text span { color: #64b5f6; }
 
     .dark-toggle { background: none; border: 1px solid var(--input-border); border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 12px; font-weight: 500; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; transition: all 0.15s; font-family: 'Inter', sans-serif; }
     .dark-toggle:hover { border-color: var(--brand); color: var(--brand); }
@@ -180,7 +175,7 @@
 
   <div class="topbar">
     <div class="brand-name">
-        <img src="stewrd-logo.png" alt="Stewrd Logo">
+      <img src="stewrd-logo.png" alt="Stewrd Logo">
     </div>
     <div class="brand-sep"></div>
     <div class="brand-module">Leave Management</div>
@@ -250,6 +245,7 @@
                 <option value="Marketing">Marketing</option>
                 <option value="IT">IT</option>
                 <option value="Admin">Admin</option>
+                <option value="Accounting">Accounting</option>
               </select>
             </div>
             <div class="field">
@@ -371,6 +367,7 @@
   <script>
     const WEBHOOK    = "https://primary-production-a810.up.railway.app/webhook/ddeb7597-8a11-4502-bb87-6f0e803a1c5f";
     const VERIFY_URL = "https://primary-production-a810.up.railway.app/webhook/verify-employee";
+    const DEPARTMENTS_URL = 'https://primary-production-a810.up.railway.app/webhook/get-departments';
     const MAX_DAYS   = 14;
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
     const ALLOWED_EXTS  = ['.pdf', '.png', '.doc', '.docx'];
@@ -383,6 +380,36 @@
 
     let employeeVerified = false;
     let currentSIL = 0;
+
+    // ── Load Departments on Page Load ──
+    async function loadDepartments() {
+      try {
+        const res  = await fetch(DEPARTMENTS_URL);
+        const raw  = await res.json();
+        const rows = Array.isArray(raw) ? raw.map(i => i.json ?? i) : [];
+
+        const sel = document.getElementById('department');
+        // Clear existing options except the placeholder
+        sel.innerHTML = '<option value="" disabled selected>Select department</option>';
+
+        rows.forEach(dept => {
+          const opt = document.createElement('option');
+          opt.value       = dept.name; // Must match exactly what the DB returns
+          opt.textContent = dept.name;
+          sel.appendChild(opt);
+        });
+
+        // Store as a map for use in verifyEmployee auto-fill
+        window.deptMap = {};
+        rows.forEach(dept => { window.deptMap[dept.name] = dept.name; });
+
+      } catch (err) {
+        console.error('Failed to load departments:', err);
+      }
+    }
+
+    // Call immediately so the dropdown is ready before the user types their PIN
+    loadDepartments();
 
     // ── Dark mode ──
     function toggleDark() {
@@ -399,8 +426,8 @@
 
     function togglePin(btn) {
       const input = document.getElementById('employee_pin');
-      const show = input.type === 'password';
-      input.type = show ? 'text' : 'password';
+      const show  = input.type === 'password';
+      input.type  = show ? 'text' : 'password';
       btn.textContent = show ? '🙈' : '👁';
     }
 
@@ -516,24 +543,34 @@
         loading.classList.remove('show');
         btn.disabled = false;
 
-        if (data.found && data.name.trim().toLowerCase() === name.trim().toLowerCase()) {
+        // ── Name matching: flexible — handles middle names and partial input ──
+        const dbName     = (data.name || '').trim().toLowerCase();
+        const inputName  = name.trim().toLowerCase();
+        const dbWords    = dbName.split(/\s+/);
+        const inputWords = inputName.split(/\s+/);
+        const nameMatch  = inputWords.every(word => dbWords.includes(word));
+        
+        if (data.found && nameMatch) {
           employeeVerified = true;
           currentSIL = parseFloat(data.sil) || 0;
 
           document.getElementById('verifiedName').textContent = data.name;
-          document.getElementById('verifiedMeta').textContent = `${data.job_title || '—'} · ${data.department || '—'}`;
+          document.getElementById('verifiedMeta').textContent =
+            `${data.job_title || '—'} · ${data.department || '—'}`;
 
           const silBadge = document.getElementById('silBadge');
-          document.getElementById('silText').textContent = `${currentSIL.toFixed(1)} SIL day${currentSIL !== 1 ? 's' : ''} remaining`;
-          silBadge.className = currentSIL === 0 ? 'sil-badge empty' : currentSIL <= 2 ? 'sil-badge low' : 'sil-badge';
+          document.getElementById('silText').textContent =
+            `${currentSIL.toFixed(1)} SIL day${currentSIL !== 1 ? 's' : ''} remaining`;
+          silBadge.className = currentSIL === 0
+            ? 'sil-badge empty'
+            : currentSIL <= 2
+              ? 'sil-badge low'
+              : 'sil-badge';
 
-          const deptMap = {
-            'Human Resources': 'HR', 'HR': 'HR', 'Finance': 'Finance',
-            'Engineering': 'Engineering', 'Operations': 'Operations',
-            'Sales': 'Sales', 'Marketing': 'Marketing', 'IT': 'IT',
-            'Admin': 'Admin', 'Accounting': 'Accounting', 'Productions': 'Productions'
-          };
-          if (data.department) document.getElementById('department').value = deptMap[data.department] || data.department;
+          // Use the globally loaded deptMap
+          if (data.department && window.deptMap) {
+             document.getElementById('department').value = window.deptMap[data.department] || data.department;
+          }
           if (data.job_title)  document.getElementById('job_title').value  = data.job_title;
           if (data.email)      document.getElementById('email').value      = data.email;
 
@@ -544,7 +581,7 @@
           }
 
         } else if (data.found) {
-          error.textContent = '❌ Name does not match our records. Please check your name and PIN.';
+          error.textContent = '❌ Name does not match our records. Please check your name and try again.';
           error.classList.add('show');
         } else {
           error.textContent = '❌ Employee not found. Please check your name and PIN and try again.';
@@ -625,7 +662,7 @@
       }
     });
 
-    fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('dragover'); });
+    fileDrop.addEventListener('dragover',  e => { e.preventDefault(); fileDrop.classList.add('dragover'); });
     fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('dragover'));
     fileDrop.addEventListener('drop', e => {
       e.preventDefault();
@@ -653,7 +690,7 @@
     function showToast(msg, type = 'success') {
       const t = document.getElementById('toast');
       document.getElementById('toastIcon').textContent = type === 'success' ? '✔' : '✖';
-      document.getElementById('toastMsg').textContent = msg;
+      document.getElementById('toastMsg').textContent  = msg;
       t.className = `toast ${type} show`;
       setTimeout(() => t.classList.remove('show'), 4500);
     }
@@ -676,7 +713,7 @@
         sil_amount:    get('sil_amount') || '0',
         start_time:    get('start_time'),
         end_time:      get('end_time'),
-        reason:        get('reason') || "", // Explicitly returns "" if left blank
+        reason:        get('reason') || '',
         company_id:    get('company_id'),
       };
 
@@ -691,9 +728,11 @@
         return showToast('End time must be after start time.', 'error');
 
       const diffDays = (new Date(values.end_time) - new Date(values.start_time)) / (1000 * 60 * 60 * 24);
-      if (diffDays > MAX_DAYS) return showToast('Leave duration exceeds 14 days. Please adjust your dates.', 'error');
+      if (diffDays > MAX_DAYS)
+        return showToast('Leave duration exceeds 14 days. Please adjust your dates.', 'error');
 
-      if (!values.use_credits) return showToast('Please select whether to use leave credits.', 'error');
+      if (!values.use_credits)
+        return showToast('Please select whether to use leave credits.', 'error');
 
       if (values.use_credits === 'Yes') {
         const silAmt = parseFloat(values.sil_amount) || 0;
@@ -734,18 +773,18 @@
           currentSIL = 0;
           document.getElementById('employeeCard').classList.remove('show');
           document.getElementById('employeeError').classList.remove('show');
-          document.getElementById('durationBanner').className = 'duration-banner';
-          document.getElementById('creditsInfo').className = 'credits-info';
-          document.getElementById('silAmountField').className = 'sil-amount-field';
-          document.getElementById('sil_amount').value = '';
-          document.getElementById('silRemaining').className = 'sil-remaining';
+          document.getElementById('durationBanner').className   = 'duration-banner';
+          document.getElementById('creditsInfo').className      = 'credits-info';
+          document.getElementById('silAmountField').className   = 'sil-amount-field';
+          document.getElementById('sil_amount').value           = '';
+          document.getElementById('silRemaining').className     = 'sil-remaining';
         } else {
           showToast(`Submission failed (${res.status}). Please try again.`, 'error');
         }
       } catch {
         showToast('Network error. Please check your connection.', 'error');
       } finally {
-        btn.disabled = false;
+        btn.disabled    = false;
         btn.textContent = 'Submit Leave Request';
       }
     });
