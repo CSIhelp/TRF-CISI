@@ -76,6 +76,7 @@
     input:focus, select:focus, textarea:focus { border-color: var(--brand); background: var(--card-bg); box-shadow: 0 0 0 3px var(--input-focus-shadow); }
     input::placeholder, textarea::placeholder { color: var(--text-secondary); }
     input:disabled { opacity: 0.6; cursor: not-allowed; }
+    select:disabled { opacity: 0.6; cursor: not-allowed; }
     select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%232FAAE1' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 34px; }
     select option { background: var(--card-bg); color: var(--text-primary); }
     textarea { resize: vertical; min-height: 84px; line-height: 1.55; }
@@ -165,10 +166,7 @@
 
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #0d2535; color: #fff; font-size: 13px; font-weight: 500; padding: 11px 20px; border-radius: 8px; display: flex; align-items: center; gap: 8px; z-index: 999; opacity: 0; transition: transform 0.35s ease, opacity 0.3s; white-space: nowrap; box-shadow: 0 4px 16px rgba(47,170,225,0.2); }
     .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-    
-    /* ── Updated Success Toast Color ── */
-    .toast.success { background: #059669; } /* Deep Emerald Green */
-    
+    .toast.success { background: #059669; }
     .toast.error { background: #991b1b; }
     .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; animation: spin 0.65s linear infinite; vertical-align: middle; margin-right: 6px; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -240,7 +238,7 @@
             <div class="field">
               <label>Department <span class="req">*</span></label>
               <select id="department" required>
-                <option value="" disabled selected>Select department</option>
+                <option value="" disabled selected>Loading departments…</option>
               </select>
             </div>
             <div class="field">
@@ -264,10 +262,10 @@
               <option value="Sick">Sick Leave</option>
               <option value="Vacation">Vacation Leave</option>
               <option value="Emergency">Emergency Leave</option>
-              <option value="Maternity">Maternity Leave</option>
-              <option value="Paternity">Paternity Leave</option>
               <option value="Bereavement">Bereavement Leave</option>
-              <option value="Unpaid">Unpaid Leave</option>
+              <option value="Undertime">Undertime</option>
+              <option value="Overtime">Overtime</option>
+              <option value="Absence">Unpaid Leave / Absence</option>
               <option value="Tardiness">Tardiness</option>
               <option value="Other">Other</option>
             </select>
@@ -361,44 +359,48 @@
   </div>
 
   <script>
-    const WEBHOOK    = "https://primary-production-a810.up.railway.app/webhook/ddeb7597-8a11-4502-bb87-6f0e803a1c5f";
-    const VERIFY_URL = "https://primary-production-a810.up.railway.app/webhook/verify-employee";
-    const DEPARTMENTS_URL = 'https://primary-production-a810.up.railway.app/webhook/get-departments';
-    const MAX_DAYS   = 14;
-    const MAX_FILE_SIZE = 10 * 1024 * 1024;
-    const ALLOWED_EXTS  = ['.pdf', '.png', '.doc', '.docx'];
-    const ALLOWED_TYPES = [
+    const WEBHOOK         = "https://primary-production-a810.up.railway.app/webhook/ddeb7597-8a11-4502-bb87-6f0e803a1c5f";
+    const VERIFY_URL      = "https://primary-production-a810.up.railway.app/webhook/verify-employee";
+    const DEPARTMENTS_URL = "https://primary-production-a810.up.railway.app/webhook/get-departments";
+    const MAX_DAYS        = 14;
+    const MAX_FILE_SIZE   = 10 * 1024 * 1024;
+    const ALLOWED_EXTS    = ['.pdf', '.png', '.doc', '.docx'];
+    const ALLOWED_TYPES   = [
       'application/pdf',
       'image/png',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ];
 
-    let employeeVerified = false;
-    let currentSIL = 0;
+    // Types that don't use SIL credits and don't count working days
+    const NO_CREDITS_TYPES = ['Tardiness', 'Overtime'];
+    // Types that count hours rather than days
+    const HOURLY_TYPES     = ['Overtime', 'Undertime', 'Tardiness'];
 
-    // ── Load Departments on Page Load ──
+    let employeeVerified = false;
+    let currentSIL       = 0;
+
+    // ── Load Departments ──
     async function loadDepartments() {
+      const sel = document.getElementById('department');
       try {
         const res  = await fetch(DEPARTMENTS_URL);
         const raw  = await res.json();
         const rows = Array.isArray(raw) ? raw.map(i => i.json ?? i) : [];
 
-        const sel = document.getElementById('department');
         sel.innerHTML = '<option value="" disabled selected>Select department</option>';
-
         rows.forEach(dept => {
-          const opt = document.createElement('option');
-          opt.value       = dept.name; 
+          const opt       = document.createElement('option');
+          opt.value       = dept.name;
           opt.textContent = dept.name;
           sel.appendChild(opt);
         });
 
         window.deptMap = {};
         rows.forEach(dept => { window.deptMap[dept.name] = dept.name; });
-
       } catch (err) {
         console.error('Failed to load departments:', err);
+        sel.innerHTML = '<option value="" disabled selected>Select department</option>';
       }
     }
     loadDepartments();
@@ -441,18 +443,28 @@
       return true;
     }
 
-    // ── Tardiness Logic ──
-    document.getElementById('request_type').addEventListener('change', function() {
+    // ── Leave Type Change Handler ──
+    document.getElementById('request_type').addEventListener('change', function () {
+      const type            = this.value;
       const creditsDropdown = document.getElementById('use_credits');
-      
-      if (this.value === 'Tardiness') {
-        creditsDropdown.value = 'No';
+      const isNoCredits     = NO_CREDITS_TYPES.includes(type);
+
+      if (isNoCredits) {
+        creditsDropdown.value    = 'No';
         creditsDropdown.disabled = true;
-        updateCreditsInfo(); 
-        showToast('Tardiness selected: Leave credits are not required.', 'success');
+        updateCreditsInfo();
+        showToast(`${type} selected — leave credits are not applicable.`, 'success');
       } else {
-        creditsDropdown.disabled = false; 
+        creditsDropdown.disabled = false;
+        // Only reset if it was previously locked
+        if (creditsDropdown.value === 'No' && !isNoCredits) {
+          creditsDropdown.value = '';
+          updateCreditsInfo();
+        }
       }
+
+      // Re-run duration check so the banner reflects the correct mode
+      checkDuration();
     });
 
     // ── SIL Amount Validation ──
@@ -464,28 +476,28 @@
 
       if (entered <= 0) {
         silInput.style.borderColor = '#dc2626';
-        silRemaining.className = 'sil-remaining err';
-        silRemaining.textContent = '⚠️ Please enter a valid amount greater than 0.';
+        silRemaining.className     = 'sil-remaining err';
+        silRemaining.textContent   = '⚠️ Please enter a valid amount greater than 0.';
         return;
       }
       if (entered > currentSIL) {
         silInput.style.borderColor = '#dc2626';
-        silRemaining.className = 'sil-remaining err';
-        silRemaining.textContent = `❌ Exceeds available balance. You only have ${currentSIL.toFixed(1)} SIL day(s).`;
+        silRemaining.className     = 'sil-remaining err';
+        silRemaining.textContent   = `❌ Exceeds available balance. You only have ${currentSIL.toFixed(1)} SIL day(s).`;
         return;
       }
       if ((entered * 2) % 1 !== 0) {
         silInput.style.borderColor = '#f59e0b';
-        silRemaining.className = 'sil-remaining warn';
-        silRemaining.textContent = `⚠️ Please use 0.5 increments (e.g. 0.5, 1.0, 1.5).`;
+        silRemaining.className     = 'sil-remaining warn';
+        silRemaining.textContent   = `⚠️ Please use 0.5 increments (e.g. 0.5, 1.0, 1.5).`;
         return;
       }
       silInput.style.borderColor = '';
       if (remaining <= 1) {
-        silRemaining.className = 'sil-remaining warn';
+        silRemaining.className   = 'sil-remaining warn';
         silRemaining.textContent = `⚠️ After deduction: ${remaining.toFixed(1)} SIL day(s) remaining.`;
       } else {
-        silRemaining.className = 'sil-remaining ok';
+        silRemaining.className   = 'sil-remaining ok';
         silRemaining.textContent = `✅ After deduction: ${remaining.toFixed(1)} SIL day(s) remaining.`;
       }
     }
@@ -500,8 +512,8 @@
       const silRemaining = document.getElementById('silRemaining');
 
       if (val === 'Yes') {
-        box.innerHTML = `🏖️ <strong>${currentSIL.toFixed(1)} SIL day${currentSIL !== 1 ? 's' : ''}</strong> currently available. Enter how many credits you want to use below.`;
-        box.className = 'credits-info show';
+        box.innerHTML              = `🏖️ <strong>${currentSIL.toFixed(1)} SIL day${currentSIL !== 1 ? 's' : ''}</strong> currently available. Enter how many credits you want to use below.`;
+        box.className              = 'credits-info show';
         silField.className         = 'sil-amount-field show';
         silAvailable.textContent   = currentSIL.toFixed(1);
         silInput.max               = currentSIL;
@@ -509,8 +521,8 @@
         silInput.style.borderColor = '';
         silRemaining.className     = 'sil-remaining';
       } else if (val === 'No') {
-        box.innerHTML = `ℹ️ Leave credits will <strong>not</strong> be deducted. This leave may be treated as unpaid depending on HR approval.`;
-        box.className = 'credits-info show';
+        box.innerHTML              = `ℹ️ Leave credits will <strong>not</strong> be deducted. This leave may be treated as unpaid depending on HR approval.`;
+        box.className              = 'credits-info show';
         silField.className         = 'sil-amount-field';
         silInput.value             = '';
         silInput.style.borderColor = '';
@@ -539,7 +551,7 @@
       card.classList.remove('show');
       error.classList.remove('show');
       loading.classList.add('show');
-      btn.disabled = true;
+      btn.disabled     = true;
       employeeVerified = false;
 
       try {
@@ -549,15 +561,16 @@
         loading.classList.remove('show');
         btn.disabled = false;
 
+        // Flexible name match — handles missing middle names
         const dbName     = (data.name || '').trim().toLowerCase();
         const inputName  = name.trim().toLowerCase();
         const dbWords    = dbName.split(/\s+/);
         const inputWords = inputName.split(/\s+/);
         const nameMatch  = inputWords.every(word => dbWords.includes(word));
-        
+
         if (data.found && nameMatch) {
           employeeVerified = true;
-          currentSIL = parseFloat(data.sil) || 0;
+          currentSIL       = parseFloat(data.sil) || 0;
 
           document.getElementById('verifiedName').textContent = data.name;
           document.getElementById('verifiedMeta').textContent =
@@ -573,10 +586,11 @@
               : 'sil-badge';
 
           if (data.department && window.deptMap) {
-             document.getElementById('department').value = window.deptMap[data.department] || data.department;
+            document.getElementById('department').value =
+              window.deptMap[data.department] || data.department;
           }
-          if (data.job_title)  document.getElementById('job_title').value  = data.job_title;
-          if (data.email)      document.getElementById('email').value      = data.email;
+          if (data.job_title) document.getElementById('job_title').value = data.job_title;
+          if (data.email)     document.getElementById('email').value     = data.email;
 
           card.classList.add('show');
 
@@ -593,7 +607,7 @@
         }
       } catch {
         loading.classList.remove('show');
-        btn.disabled = false;
+        btn.disabled      = false;
         error.textContent = '❌ Could not verify at this time. Please try again.';
         error.classList.add('show');
       }
@@ -606,33 +620,28 @@
     ['employee_name', 'employee_pin'].forEach(id => {
       document.getElementById(id).addEventListener('input', () => {
         employeeVerified = false;
-        currentSIL = 0;
+        currentSIL       = 0;
         document.getElementById('employeeCard').classList.remove('show');
         document.getElementById('employeeError').classList.remove('show');
         document.getElementById('silAmountField').className = 'sil-amount-field';
-        document.getElementById('sil_amount').value = '';
-        document.getElementById('silRemaining').className = 'sil-remaining';
+        document.getElementById('sil_amount').value         = '';
+        document.getElementById('silRemaining').className   = 'sil-remaining';
       });
     });
 
-    // ── Advanced 8am-5pm Duration Check ──
+    // ── Working hours calculator (8am–5pm, skips weekends) ──
     function calculateWorkingHours(startDate, endDate) {
       let totalMinutes = 0;
       let current = new Date(startDate);
 
       while (current < endDate) {
-        // Skip weekends
         if (current.getDay() === 0 || current.getDay() === 6) {
           current.setDate(current.getDate() + 1);
           current.setHours(8, 0, 0, 0);
           continue;
         }
-
-        let dayStart = new Date(current);
-        dayStart.setHours(8, 0, 0, 0); // 8:00 AM
-
-        let dayEnd = new Date(current);
-        dayEnd.setHours(17, 0, 0, 0); // 5:00 PM
+        const dayStart = new Date(current); dayStart.setHours(8, 0, 0, 0);
+        const dayEnd   = new Date(current); dayEnd.setHours(17, 0, 0, 0);
 
         if (current < dayStart) current = new Date(dayStart);
         if (current >= dayEnd) {
@@ -640,22 +649,20 @@
           current.setHours(8, 0, 0, 0);
           continue;
         }
-
-        let endBlock = (endDate < dayEnd) ? endDate : dayEnd;
-        totalMinutes += (endBlock - current) / 60000;
-        
+        const endBlock   = (endDate < dayEnd) ? endDate : dayEnd;
+        totalMinutes    += (endBlock - current) / 60000;
         current.setDate(current.getDate() + 1);
         current.setHours(8, 0, 0, 0);
       }
-
-      // 8 AM to 5 PM is exactly 9 elapsed hours (540 minutes).
-      // We divide by 540 so that taking the full 8-to-5 block equals exactly 1.0 day.
+      // 8am–5pm = 9 elapsed hours = 540 min = 1 full working day
       return totalMinutes / 540;
     }
 
+    // ── Duration check — handles overtime separately ──
     function checkDuration() {
       const start  = document.getElementById('start_time').value;
       const end    = document.getElementById('end_time').value;
+      const type   = document.getElementById('request_type').value;
       const banner = document.getElementById('durationBanner');
       const icon   = document.getElementById('durationIcon');
       const msg    = document.getElementById('durationMsg');
@@ -666,9 +673,22 @@
       const endDate   = new Date(end);
       if (endDate <= startDate) { banner.className = 'duration-banner'; return; }
 
-      // Calculate working days based on 8am-5pm schedule
+      // ── Overtime, Undertime, Tardiness: show elapsed hours, no 8-5 clamping ──
+      if (HOURLY_TYPES.includes(type)) {
+        const diffMins = (endDate - startDate) / 60000;
+        const hours    = Math.floor(diffMins / 60);
+        const mins     = Math.round(diffMins % 60);
+        const display  = mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+        const labels   = { Overtime: '🕐 Overtime', Undertime: '🕑 Undertime', Tardiness: '⏰ Tardiness' };
+        icon.textContent = labels[type]?.split(' ')[0] || '🕐';
+        msg.textContent  = `${type} duration: ${display}.`;
+        banner.className = 'duration-banner info show';
+        return;
+      }
+
+      // ── All other types: working days 8am–5pm ──
       const workingDays = calculateWorkingHours(startDate, endDate);
-      const rounded = Math.round(workingDays * 10) / 10; // Round to 1 decimal
+      const rounded     = Math.round(workingDays * 10) / 10;
 
       if (workingDays > MAX_DAYS) {
         icon.textContent = '🚫';
@@ -696,10 +716,7 @@
 
     fileInput.addEventListener('change', () => {
       if (fileInput.files[0]) {
-        if (!validateFile(fileInput.files[0])) {
-          fileInput.value = '';
-          return;
-        }
+        if (!validateFile(fileInput.files[0])) { fileInput.value = ''; return; }
         showFile(fileInput.files[0]);
       }
     });
@@ -718,7 +735,7 @@
     });
 
     function showFile(f) {
-      fileName.textContent = f.name;
+      fileName.textContent   = f.name;
       fileChip.classList.add('show');
       fileDrop.style.display = 'none';
     }
@@ -745,7 +762,9 @@
       if (!employeeVerified) return showToast('Please verify your identity first.', 'error');
 
       const requestType = get('request_type');
-      const useCredits = get('use_credits');
+      const useCredits  = get('use_credits');
+      const isHourly    = HOURLY_TYPES.includes(requestType);
+      const isNoCredits = NO_CREDITS_TYPES.includes(requestType);
 
       const values = {
         employee_name: get('employee_name'),
@@ -762,6 +781,7 @@
         company_id:    get('company_id'),
       };
 
+      // Basic field validation
       if (!values.employee_name) return showToast('Please enter your full name.', 'error');
       if (!values.employee_pin)  return showToast('Please enter your PIN.', 'error');
       if (!values.department)    return showToast('Please select your department.', 'error');
@@ -772,13 +792,15 @@
       if (new Date(values.end_time) <= new Date(values.start_time))
         return showToast('End time must be after start time.', 'error');
 
-      // Check max days (using new 8-5 logic)
-      const workingDays = calculateWorkingHours(new Date(values.start_time), new Date(values.end_time));
-      if (workingDays > MAX_DAYS)
-        return showToast('Leave duration exceeds 14 working days. Please adjust your dates.', 'error');
+      // Max days check — skip for hourly types (overtime, undertime, tardiness)
+      if (!isHourly) {
+        const workingDays = calculateWorkingHours(new Date(values.start_time), new Date(values.end_time));
+        if (workingDays > MAX_DAYS)
+          return showToast('Leave duration exceeds 14 working days. Please adjust your dates.', 'error');
+      }
 
-      // Validation for credits unless it's tardiness
-      if (requestType !== 'Tardiness') {
+      // Credits validation — skip for no-credits types
+      if (!isNoCredits) {
         if (!values.use_credits)
           return showToast('Please select whether to use leave credits.', 'error');
 
@@ -798,7 +820,6 @@
       const fd = new FormData();
       Object.entries(values).forEach(([k, v]) => {
         if (k === 'start_time' || k === 'end_time') {
-          // Send to backend in ISO string, preserving the local time selected
           fd.append(k, new Date(v).toISOString());
         } else {
           fd.append(k, v);
@@ -810,7 +831,7 @@
       }
 
       const btn = document.getElementById('submitBtn');
-      btn.disabled = true;
+      btn.disabled  = true;
       btn.innerHTML = '<span class="spinner"></span>Submitting…';
 
       try {
@@ -820,18 +841,21 @@
           document.getElementById('leaveForm').reset();
           clearFile();
           employeeVerified = false;
-          currentSIL = 0;
-          
-          // Unlock dropdown if it was locked by Tardiness
+          currentSIL       = 0;
+
+          // Unlock credits dropdown in case it was locked
           document.getElementById('use_credits').disabled = false;
-          
+
           document.getElementById('employeeCard').classList.remove('show');
           document.getElementById('employeeError').classList.remove('show');
-          document.getElementById('durationBanner').className   = 'duration-banner';
-          document.getElementById('creditsInfo').className      = 'credits-info';
-          document.getElementById('silAmountField').className   = 'sil-amount-field';
-          document.getElementById('sil_amount').value           = '';
-          document.getElementById('silRemaining').className     = 'sil-remaining';
+          document.getElementById('durationBanner').className = 'duration-banner';
+          document.getElementById('creditsInfo').className    = 'credits-info';
+          document.getElementById('silAmountField').className = 'sil-amount-field';
+          document.getElementById('sil_amount').value         = '';
+          document.getElementById('silRemaining').className   = 'sil-remaining';
+
+          // Reload departments so dropdown is repopulated after form reset
+          loadDepartments();
         } else {
           showToast(`Submission failed (${res.status}). Please try again.`, 'error');
         }
