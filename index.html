@@ -165,7 +165,10 @@
 
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #0d2535; color: #fff; font-size: 13px; font-weight: 500; padding: 11px 20px; border-radius: 8px; display: flex; align-items: center; gap: 8px; z-index: 999; opacity: 0; transition: transform 0.35s ease, opacity 0.3s; white-space: nowrap; box-shadow: 0 4px 16px rgba(47,170,225,0.2); }
     .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-    .toast.success { background: var(--brand-darker); }
+    
+    /* ── Updated Success Toast Color ── */
+    .toast.success { background: #059669; } /* Deep Emerald Green */
+    
     .toast.error { background: #991b1b; }
     .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; animation: spin 0.65s linear infinite; vertical-align: middle; margin-right: 6px; }
     @keyframes spin { to { transform: rotate(360deg); } }
