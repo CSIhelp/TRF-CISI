@@ -238,14 +238,6 @@
               <label>Department <span class="req">*</span></label>
               <select id="department" required>
                 <option value="" disabled selected>Select department</option>
-                <option value="HR">Human Resources</option>
-                <option value="Finance">Finance</option>
-                <option value="Operations">Operations</option>
-                <option value="Sales">Sales</option>
-                <option value="Marketing">Marketing</option>
-                <option value="IT">IT</option>
-                <option value="Admin">Admin</option>
-                <option value="Accounting">Accounting</option>
               </select>
             </div>
             <div class="field">
@@ -273,6 +265,7 @@
               <option value="Paternity">Paternity Leave</option>
               <option value="Bereavement">Bereavement Leave</option>
               <option value="Unpaid">Unpaid Leave</option>
+              <option value="Tardiness">Tardiness</option>
               <option value="Other">Other</option>
             </select>
           </div>
@@ -389,17 +382,15 @@
         const rows = Array.isArray(raw) ? raw.map(i => i.json ?? i) : [];
 
         const sel = document.getElementById('department');
-        // Clear existing options except the placeholder
         sel.innerHTML = '<option value="" disabled selected>Select department</option>';
 
         rows.forEach(dept => {
           const opt = document.createElement('option');
-          opt.value       = dept.name; // Must match exactly what the DB returns
+          opt.value       = dept.name; 
           opt.textContent = dept.name;
           sel.appendChild(opt);
         });
 
-        // Store as a map for use in verifyEmployee auto-fill
         window.deptMap = {};
         rows.forEach(dept => { window.deptMap[dept.name] = dept.name; });
 
@@ -407,8 +398,6 @@
         console.error('Failed to load departments:', err);
       }
     }
-
-    // Call immediately so the dropdown is ready before the user types their PIN
     loadDepartments();
 
     // ── Dark mode ──
@@ -448,6 +437,20 @@
       }
       return true;
     }
+
+    // ── Tardiness Logic ──
+    document.getElementById('request_type').addEventListener('change', function() {
+      const creditsDropdown = document.getElementById('use_credits');
+      
+      if (this.value === 'Tardiness') {
+        creditsDropdown.value = 'No';
+        creditsDropdown.disabled = true;
+        updateCreditsInfo(); 
+        showToast('Tardiness selected: Leave credits are not required.', 'success');
+      } else {
+        creditsDropdown.disabled = false; 
+      }
+    });
 
     // ── SIL Amount Validation ──
     function validateSilAmount() {
@@ -543,7 +546,6 @@
         loading.classList.remove('show');
         btn.disabled = false;
 
-        // ── Name matching: flexible — handles middle names and partial input ──
         const dbName     = (data.name || '').trim().toLowerCase();
         const inputName  = name.trim().toLowerCase();
         const dbWords    = dbName.split(/\s+/);
@@ -567,7 +569,6 @@
               ? 'sil-badge low'
               : 'sil-badge';
 
-          // Use the globally loaded deptMap
           if (data.department && window.deptMap) {
              document.getElementById('department').value = window.deptMap[data.department] || data.department;
           }
@@ -611,7 +612,44 @@
       });
     });
 
-    // ── Duration check ──
+    // ── Advanced 8am-5pm Duration Check ──
+    function calculateWorkingHours(startDate, endDate) {
+      let totalMinutes = 0;
+      let current = new Date(startDate);
+
+      while (current < endDate) {
+        // Skip weekends
+        if (current.getDay() === 0 || current.getDay() === 6) {
+          current.setDate(current.getDate() + 1);
+          current.setHours(8, 0, 0, 0);
+          continue;
+        }
+
+        let dayStart = new Date(current);
+        dayStart.setHours(8, 0, 0, 0); // 8:00 AM
+
+        let dayEnd = new Date(current);
+        dayEnd.setHours(17, 0, 0, 0); // 5:00 PM
+
+        if (current < dayStart) current = new Date(dayStart);
+        if (current >= dayEnd) {
+          current.setDate(current.getDate() + 1);
+          current.setHours(8, 0, 0, 0);
+          continue;
+        }
+
+        let endBlock = (endDate < dayEnd) ? endDate : dayEnd;
+        totalMinutes += (endBlock - current) / 60000;
+        
+        current.setDate(current.getDate() + 1);
+        current.setHours(8, 0, 0, 0);
+      }
+
+      // 8 AM to 5 PM is exactly 9 elapsed hours (540 minutes).
+      // We divide by 540 so that taking the full 8-to-5 block equals exactly 1.0 day.
+      return totalMinutes / 540;
+    }
+
     function checkDuration() {
       const start  = document.getElementById('start_time').value;
       const end    = document.getElementById('end_time').value;
@@ -625,20 +663,21 @@
       const endDate   = new Date(end);
       if (endDate <= startDate) { banner.className = 'duration-banner'; return; }
 
-      const diffDays = (endDate - startDate) / (1000 * 60 * 60 * 24);
-      const rounded  = Math.ceil(diffDays);
+      // Calculate working days based on 8am-5pm schedule
+      const workingDays = calculateWorkingHours(startDate, endDate);
+      const rounded = Math.round(workingDays * 10) / 10; // Round to 1 decimal
 
-      if (diffDays > MAX_DAYS) {
+      if (workingDays > MAX_DAYS) {
         icon.textContent = '🚫';
-        msg.textContent  = `Leave duration is ${rounded} day${rounded > 1 ? 's' : ''} — exceeds the 14-day maximum. Please adjust your dates or contact HR.`;
+        msg.textContent  = `Leave duration is ${rounded} working day(s) — exceeds the 14-day maximum. Please adjust your dates or contact HR.`;
         banner.className = 'duration-banner error show';
-      } else if (diffDays > 7) {
+      } else if (workingDays > 7) {
         icon.textContent = '⚠️';
-        msg.textContent  = `Leave duration is ${rounded} day${rounded > 1 ? 's' : ''} — approaching the 14-day limit.`;
+        msg.textContent  = `Leave duration is ${rounded} working day(s) — approaching the 14-day limit.`;
         banner.className = 'duration-banner warning show';
       } else {
         icon.textContent = '📅';
-        msg.textContent  = `Leave duration: ${rounded} day${rounded > 1 ? 's' : ''}.`;
+        msg.textContent  = `Leave duration: ${rounded} working day(s).`;
         banner.className = 'duration-banner info show';
       }
     }
@@ -702,14 +741,17 @@
 
       if (!employeeVerified) return showToast('Please verify your identity first.', 'error');
 
+      const requestType = get('request_type');
+      const useCredits = get('use_credits');
+
       const values = {
         employee_name: get('employee_name'),
         employee_pin:  get('employee_pin'),
         department:    get('department'),
         job_title:     get('job_title'),
         email:         get('email'),
-        request_type:  get('request_type'),
-        use_credits:   get('use_credits'),
+        request_type:  requestType,
+        use_credits:   useCredits,
         sil_amount:    get('sil_amount') || '0',
         start_time:    get('start_time'),
         end_time:      get('end_time'),
@@ -727,21 +769,25 @@
       if (new Date(values.end_time) <= new Date(values.start_time))
         return showToast('End time must be after start time.', 'error');
 
-      const diffDays = (new Date(values.end_time) - new Date(values.start_time)) / (1000 * 60 * 60 * 24);
-      if (diffDays > MAX_DAYS)
-        return showToast('Leave duration exceeds 14 days. Please adjust your dates.', 'error');
+      // Check max days (using new 8-5 logic)
+      const workingDays = calculateWorkingHours(new Date(values.start_time), new Date(values.end_time));
+      if (workingDays > MAX_DAYS)
+        return showToast('Leave duration exceeds 14 working days. Please adjust your dates.', 'error');
 
-      if (!values.use_credits)
-        return showToast('Please select whether to use leave credits.', 'error');
+      // Validation for credits unless it's tardiness
+      if (requestType !== 'Tardiness') {
+        if (!values.use_credits)
+          return showToast('Please select whether to use leave credits.', 'error');
 
-      if (values.use_credits === 'Yes') {
-        const silAmt = parseFloat(values.sil_amount) || 0;
-        if (silAmt <= 0)
-          return showToast('Please enter how many SIL credits to use.', 'error');
-        if ((silAmt * 2) % 1 !== 0)
-          return showToast('SIL amount must be in 0.5 increments (e.g. 0.5, 1.0, 1.5).', 'error');
-        if (silAmt > currentSIL)
-          return showToast(`You only have ${currentSIL.toFixed(1)} SIL day(s) available.`, 'error');
+        if (values.use_credits === 'Yes') {
+          const silAmt = parseFloat(values.sil_amount) || 0;
+          if (silAmt <= 0)
+            return showToast('Please enter how many SIL credits to use.', 'error');
+          if ((silAmt * 2) % 1 !== 0)
+            return showToast('SIL amount must be in 0.5 increments (e.g. 0.5, 1.0, 1.5).', 'error');
+          if (silAmt > currentSIL)
+            return showToast(`You only have ${currentSIL.toFixed(1)} SIL day(s) available.`, 'error');
+        }
       }
 
       if (fileInput.files[0] && !validateFile(fileInput.files[0])) return;
@@ -749,6 +795,7 @@
       const fd = new FormData();
       Object.entries(values).forEach(([k, v]) => {
         if (k === 'start_time' || k === 'end_time') {
+          // Send to backend in ISO string, preserving the local time selected
           fd.append(k, new Date(v).toISOString());
         } else {
           fd.append(k, v);
@@ -771,6 +818,10 @@
           clearFile();
           employeeVerified = false;
           currentSIL = 0;
+          
+          // Unlock dropdown if it was locked by Tardiness
+          document.getElementById('use_credits').disabled = false;
+          
           document.getElementById('employeeCard').classList.remove('show');
           document.getElementById('employeeError').classList.remove('show');
           document.getElementById('durationBanner').className   = 'duration-banner';
