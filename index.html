@@ -555,7 +555,7 @@
       employeeVerified = false;
 
       try {
-        const res  = await fetch(`${VERIFY_URL}?pin=${encodeURIComponent(pin)}`);
+        const res  = await fetch(`${VERIFY_URL}?pin=${encodeURIComponent(pin)}&name=${encodeURIComponent(name)}`);
         const raw  = await res.json();
         const data = Array.isArray(raw) ? raw[0] : raw;
         loading.classList.remove('show');
