@@ -132,6 +132,23 @@
   </style>
 </head>
 <body>
+
+  <script>
+    // ── IN-APP & IFRAME DETECTOR ──
+    // This displays a sticky banner if the form is opened inside an iframe or mobile app browser
+    const isIframe = window !== window.parent;
+    const isMobileApp = /FBAV|FBAN|Line|Viber|MicroMessenger|Instagram|Snapchat|Teams|Electron/i.test(navigator.userAgent);
+    
+    if (isIframe || isMobileApp) {
+        document.body.insertAdjacentHTML('afterbegin', `
+            <div style="background: #fefce8; border-bottom: 1px solid #fde68a; padding: 12px 20px; text-align: center; color: #92400e; font-size: 13px; font-weight: 500; z-index: 9999; position: relative;">
+                ⚠️ You are viewing this in an embedded browser. To ensure your file uploads and submission work correctly, please 
+                <a href="${window.location.href}" target="_blank" style="color: #d97706; text-decoration: underline; font-weight: 700;">open this page in a new tab</a>.
+            </div>
+        `);
+    }
+  </script>
+
   <div class="topbar">
     <div class="brand-name"><img src="stewrd-logo.png" alt="Stewrd Logo"></div>
     <div class="brand-sep"></div>
@@ -147,7 +164,8 @@
     <div class="page-heading">Leave Request</div>
     <div class="page-sub">Fill out the form below to submit your leave application.</div>
     <div class="card">
-      <form id="leaveForm" novalidate>
+      
+      <form id="leaveForm" novalidate onsubmit="event.preventDefault();">
 
         <div class="section">
           <div class="section-title">Employee Information</div>
@@ -289,6 +307,14 @@
           <img src="stewrd-logo.png" alt="Stewrd Logo" style="height:40px;object-fit:contain;opacity:0.7;" />
         </div>
       </form>
+      
+      <div id="successState" style="display: none; text-align: center; padding: 40px 20px;">
+        <div style="font-size: 48px; margin-bottom: 16px;">🎉</div>
+        <h2 style="font-size: 20px; color: var(--text-primary); margin-bottom: 8px;">TRF Submitted Successfully!</h2>
+        <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 24px;">Your supervisor has been notified. You can safely close this tab.</p>
+        <button type="button" onclick="window.location.reload()" class="btn-verify" style="background: var(--brand-mid); color: var(--brand-text);">Submit Another Request</button>
+      </div>
+
     </div>
   </div>
 
@@ -456,9 +482,7 @@
         const dbWords = dbName.split(' ');
         const inputWords = inputName.split(' ');
 
-        // ⭐ SMART MATCH LOGIC:
-        // 1. Check for an exact match
-        // 2. OR Check if the First word matches, Last word matches, and all typed words belong to the DB name (ignoring middle names)
+        // Smart match: check exact OR first+last word matches
         const nameMatch = (inputName === dbName) || (
           inputWords.length >= 2 &&
           inputWords[0] === dbWords[0] && 
@@ -471,7 +495,7 @@
           currentSIL         = parseFloat(data.sil) || 0;
           verifiedEmployeeId = data.id;
 
-          // ⭐ Auto-corrects the input box to the exact DB format (restores middle names)
+          // Auto-corrects the input box to the exact DB format (restores middle names)
           document.getElementById('employee_name').value = data.name;
 
           document.getElementById('verifiedName').textContent = data.name;
@@ -604,7 +628,6 @@
       const isHourly    = HOURLY_TYPES.includes(requestType);
       const isNoCredits = NO_CREDITS_TYPES.includes(requestType);
 
-      // ⭐ N/A fallbacks added here
       const values = {
         employee_name: get('employee_name'),
         employee_pin:  get('employee_pin'),
@@ -660,23 +683,11 @@
       try {
         const res = await fetch(WEBHOOK, { method: 'POST', body: fd });
         if (res.ok) {
+          // ⭐ Hide the form and show the definitive success state
+          document.getElementById('leaveForm').style.display = 'none';
+          document.getElementById('successState').style.display = 'block';
+          
           showToast('Leave request submitted successfully!','success');
-          document.getElementById('leaveForm').reset();
-          clearFile();
-          employeeVerified   = false;
-          currentSIL         = 0;
-          verifiedEmployeeId = null;
-          document.getElementById('use_credits').disabled = false;
-          document.getElementById('employeeCard').classList.remove('show');
-          document.getElementById('employeeError').classList.remove('show');
-          document.getElementById('durationBanner').className = 'duration-banner';
-          document.getElementById('creditsInfo').className    = 'credits-info';
-          document.getElementById('silAmountField').className = 'sil-amount-field';
-          document.getElementById('sil_amount').value         = '';
-          document.getElementById('silRemaining').className   = 'sil-remaining';
-          document.getElementById('reasonCounter').textContent = '0 / 100';
-          document.getElementById('reasonCounter').style.color = '';
-          loadDepartments();
         } else {
           showToast(`Submission failed (${res.status}). Please try again.`,'error');
         }
