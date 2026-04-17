@@ -154,7 +154,7 @@
           <div class="grid-2">
             <div class="field">
               <label>Full Name <span class="req">*</span></label>
-              <input type="text" id="employee_name" placeholder="Enter your name" required />
+              <input type="text" id="employee_name" placeholder="e.g. Juan Dela Cruz" required />
             </div>
             <div class="field">
               <label>Employee PIN <span class="req">*</span></label>
@@ -449,16 +449,30 @@
         const data = Array.isArray(raw) ? raw[0] : raw;
         loading.classList.remove('show'); btn.disabled = false;
 
-        const dbName    = (data.name || '').trim().toLowerCase();
-        const inputName = name.trim().toLowerCase();
-        const dbWords   = dbName.split(/\s+/);
-        const inputWords = inputName.split(/\s+/);
-        const nameMatch = inputWords.every(word => dbWords.includes(word));
+        // Clean up the names (lowercase, remove extra spaces)
+        const dbName    = (data.name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        const inputName = name.trim().toLowerCase().replace(/\s+/g, ' ');
+        
+        const dbWords = dbName.split(' ');
+        const inputWords = inputName.split(' ');
+
+        // ⭐ SMART MATCH LOGIC:
+        // 1. Check for an exact match
+        // 2. OR Check if the First word matches, Last word matches, and all typed words belong to the DB name (ignoring middle names)
+        const nameMatch = (inputName === dbName) || (
+          inputWords.length >= 2 &&
+          inputWords[0] === dbWords[0] && 
+          inputWords[inputWords.length - 1] === dbWords[dbWords.length - 1] &&
+          inputWords.every(word => dbWords.includes(word))
+        );
 
         if (data.found && nameMatch) {
           employeeVerified   = true;
           currentSIL         = parseFloat(data.sil) || 0;
           verifiedEmployeeId = data.id;
+
+          // ⭐ Auto-corrects the input box to the exact DB format (restores middle names)
+          document.getElementById('employee_name').value = data.name;
 
           document.getElementById('verifiedName').textContent = data.name;
           document.getElementById('verifiedMeta').textContent = `${data.job_title||'—'} · ${data.department||'—'}`;
@@ -475,7 +489,7 @@
           if (document.getElementById('use_credits').value === 'Yes') updateCreditsInfo();
 
         } else if (data.found) {
-          error.textContent = '❌ Name does not match our records. Please check your name and try again.';
+          error.textContent = '❌ Name does not match our records. Please type your First and Last name.';
           error.classList.add('show');
         } else {
           error.textContent = '❌ Employee not found. Please check your name and PIN and try again.';
@@ -590,19 +604,20 @@
       const isHourly    = HOURLY_TYPES.includes(requestType);
       const isNoCredits = NO_CREDITS_TYPES.includes(requestType);
 
+      // ⭐ N/A fallbacks added here
       const values = {
         employee_name: get('employee_name'),
         employee_pin:  get('employee_pin'),
         employee_id:   verifiedEmployeeId,
         department:    get('department'),
-        job_title:     get('job_title') || 'N/A', // Fallback to 'N/A' if left blank
+        job_title:     get('job_title') || 'N/A', 
         email:         get('email'),
         request_type:  requestType,
         use_credits:   useCredits,
         sil_amount:    get('sil_amount') || '0',
         start_time:    get('start_time'),
         end_time:      get('end_time'),
-        reason:        get('reason') || 'N/A', // Fallback to 'N/A' to protect your query
+        reason:        get('reason') || 'N/A',
         company_id:    get('company_id'),
       };
 
