@@ -595,14 +595,14 @@
         employee_pin:  get('employee_pin'),
         employee_id:   verifiedEmployeeId,
         department:    get('department'),
-        job_title:     get('job_title'),
+        job_title:     get('job_title') || 'N/A', // Fallback to 'N/A' if left blank
         email:         get('email'),
         request_type:  requestType,
         use_credits:   useCredits,
         sil_amount:    get('sil_amount') || '0',
         start_time:    get('start_time'),
         end_time:      get('end_time'),
-        reason:        get('reason') || '',
+        reason:        get('reason') || 'N/A', // Fallback to 'N/A' to protect your query
         company_id:    get('company_id'),
       };
 
