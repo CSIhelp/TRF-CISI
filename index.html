@@ -129,13 +129,34 @@
     .toast.error{background:#991b1b;}
     .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.35);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;vertical-align:middle;margin-right:6px;}
     @keyframes spin{to{transform:rotate(360deg);}}
+
+    /* ── Confirmation Modal Styles ── */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(3px); }
+    .modal-overlay.active { display: flex; }
+    .modal-content { background: var(--card-bg); width: 440px; max-width: 92%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); overflow: hidden; animation: popIn 0.2s ease; display: flex; flex-direction: column; border: 1px solid var(--card-border); }
+    @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-header { padding: 18px 24px; border-bottom: 1px solid var(--section-border); display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h2 { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+    .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-secondary); line-height: 1; transition: color 0.15s; }
+    .modal-close:hover { color: var(--brand); }
+    .modal-body { padding: 24px; font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+    .summary-box { background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 8px; padding: 16px; margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+    .summary-row { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--section-border); padding-bottom: 8px; }
+    .summary-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .summary-label { font-weight: 500; color: var(--text-label); flex-shrink: 0; }
+    .summary-value { color: var(--text-primary); text-align: right; font-weight: 600; word-break: break-word; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid var(--section-border); display: flex; gap: 10px; background: var(--bg); }
+    .modal-footer .btn { flex: 1; justify-content: center; padding: 11px 0; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 500; cursor: pointer; transition: all 0.15s; border: 1px solid var(--input-border); background: var(--card-bg); color: var(--text-primary); }
+    .modal-footer .btn:hover { background: var(--input-bg); }
+    .modal-footer .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .modal-footer .btn-primary:hover { background: var(--brand-dark); }
+    .modal-footer .btn-primary:disabled { background: var(--brand-mid); border-color: var(--brand-mid); cursor: not-allowed; }
   </style>
 </head>
 <body>
 
   <script>
     // ── IN-APP & IFRAME DETECTOR ──
-    // This displays a sticky banner if the form is opened inside an iframe or mobile app browser
     const isIframe = window !== window.parent;
     const isMobileApp = /FBAV|FBAN|Line|Viber|MicroMessenger|Instagram|Snapchat|Teams|Electron/i.test(navigator.userAgent);
     
@@ -219,9 +240,9 @@
         </div>
 
         <div class="section">
-          <div class="section-title">Leave Details</div>
+          <div class="section-title">Request Details</div>
           <div class="field">
-            <label>Leave Type <span class="req">*</span></label>
+            <label>Request Type <span class="req">*</span></label>
             <select id="request_type" required>
               <option value="" disabled selected>Select leave type</option>
               <option value="Sick">Sick Leave</option>
@@ -300,7 +321,7 @@
         <input type="hidden" id="company_id" value="1710054938201" />
 
         <div class="submit-row">
-          <button type="submit" class="btn-submit" id="submitBtn">Submit Leave Request</button>
+          <button type="button" class="btn-submit" id="initSubmitBtn" onclick="initiateSubmission()">Review & Submit</button>
           <div class="note">🔒 Securely submitted through HR systems</div>
         </div>
         <div style="text-align:center;margin-top:16px;">
@@ -318,6 +339,24 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="confirmationModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Confirm Details</h2>
+        <button type="button" class="modal-close" onclick="closeConfirmation()">✕</button>
+      </div>
+      <div class="modal-body">
+        Please double-check your leave request details below before submitting.
+        <div class="summary-box" id="summaryBox">
+          </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeConfirmation()">Edit Details</button>
+        <button type="button" class="btn btn-primary" id="confirmSubmitBtn" onclick="executeSubmission()">Confirm & Submit</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"><span id="toastIcon"></span><span id="toastMsg"></span></div>
 
   <script>
@@ -328,12 +367,13 @@
     const MAX_FILE_SIZE   = 10 * 1024 * 1024;
     const ALLOWED_EXTS    = ['.pdf','.png','.doc','.docx'];
     const ALLOWED_TYPES   = ['application/pdf','image/png','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    const NO_CREDITS_TYPES = ['Tardiness','Overtime'];
+    const NO_CREDITS_TYPES = ['Tardiness','Overtime','Undertime','Other'];
     const HOURLY_TYPES     = ['Overtime','Undertime','Tardiness'];
 
     let employeeVerified     = false;
     let currentSIL           = 0;
     let verifiedEmployeeId   = null;
+    let pendingFormData      = null; // Stores data for final submission
 
     // ── Load Departments ──
     async function loadDepartments() {
@@ -550,21 +590,44 @@
       });
     });
 
-    // ── Working hours calculator ──
+    // ── Working hours calculator (FIXED) ──
     function calculateWorkingHours(startDate, endDate) {
       let totalMinutes = 0;
       let current = new Date(startDate);
+      
       while (current < endDate) {
-        if (current.getDay() === 0 || current.getDay() === 6) { current.setDate(current.getDate()+1); current.setHours(8,0,0,0); continue; }
-        const dayStart = new Date(current); dayStart.setHours(8,0,0,0);
-        const dayEnd   = new Date(current); dayEnd.setHours(17,0,0,0);
-        if (current < dayStart) current = new Date(dayStart);
-        if (current >= dayEnd) { current.setDate(current.getDate()+1); current.setHours(8,0,0,0); continue; }
-        const endBlock = (endDate < dayEnd) ? endDate : dayEnd;
-        totalMinutes += (endBlock - current) / 60000;
-        current.setDate(current.getDate()+1); current.setHours(8,0,0,0);
+        if (current.getDay() === 0 || current.getDay() === 6) { 
+          current.setDate(current.getDate()+1); 
+          current.setHours(8,0,0,0); 
+          continue; 
+        }
+        
+        let dayStart   = new Date(current); dayStart.setHours(8,0,0,0);
+        let lunchStart = new Date(current); lunchStart.setHours(12,0,0,0);
+        let lunchEnd   = new Date(current); lunchEnd.setHours(13,0,0,0);
+        let dayEnd     = new Date(current); dayEnd.setHours(17,0,0,0);
+        
+        let c = new Date(current);
+        if (c < dayStart) c = new Date(dayStart);
+        
+        let e = (endDate < dayEnd) ? endDate : dayEnd;
+        
+        if (c < e) {
+          if (c < lunchStart) {
+            let mEnd = (e < lunchStart) ? e : lunchStart;
+            totalMinutes += (mEnd - c) / 60000;
+          }
+          if (e > lunchEnd) {
+            let aStart = (c > lunchEnd) ? c : lunchEnd;
+            totalMinutes += (e - aStart) / 60000;
+          }
+        }
+        
+        current.setDate(current.getDate()+1); 
+        current.setHours(8,0,0,0);
       }
-      return totalMinutes / 540;
+      
+      return totalMinutes / 480; 
     }
 
     // ── Duration check ──
@@ -578,15 +641,22 @@
       if (!start || !end) { banner.className = 'duration-banner'; return; }
       const startDate = new Date(start), endDate = new Date(end);
       if (endDate <= startDate) { banner.className = 'duration-banner'; return; }
+      
       if (HOURLY_TYPES.includes(type)) {
-        const diffMins = (endDate - startDate) / 60000;
-        const hours = Math.floor(diffMins/60), mins = Math.round(diffMins%60);
-        const display = mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+        const diffMins = Math.round((endDate - startDate) / 60000);
+        const hours = Math.floor(diffMins/60), mins = diffMins%60;
+        
+        let display = '';
+        if (hours > 0 && mins > 0) display = `${hours}h ${mins}m (${diffMins} mins)`;
+        else if (hours > 0) display = `${hours}h (${diffMins} mins)`;
+        else display = `${mins} mins`;
+
         const labels = {Overtime:'🕐 Overtime',Undertime:'🕑 Undertime',Tardiness:'⏰ Tardiness'};
         icon.textContent = labels[type]?.split(' ')[0] || '🕐';
         msg.textContent  = `${type} duration: ${display}.`;
         banner.className = 'duration-banner info show'; return;
       }
+      
       const workingDays = calculateWorkingHours(startDate, endDate);
       const rounded = Math.round(workingDays * 10) / 10;
       if (workingDays > MAX_DAYS) { icon.textContent='🚫'; msg.textContent=`Leave duration is ${rounded} working day(s) — exceeds the 14-day maximum.`; banner.className='duration-banner error show'; }
@@ -625,9 +695,8 @@
       setTimeout(() => t.classList.remove('show'), 4500);
     }
 
-    // ── Submit ──
-    document.getElementById('leaveForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
+    // ── Pre-Submit Validation & Modal ──
+    function initiateSubmission() {
       const get = id => document.getElementById(id).value.trim();
 
       if (!employeeVerified) return showToast('Please verify your identity first.','error');
@@ -686,16 +755,51 @@
       });
       if (fileInput.files[0]) fd.append('supporting_doc', fileInput.files[0], fileInput.files[0].name);
 
-      const btn = document.getElementById('submitBtn');
-      btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Submitting…';
+      // Store globally for execution
+      pendingFormData = fd;
+
+      // Formatting helper for the summary
+      const formatDt = (dStr) => {
+        const d = new Date(dStr);
+        return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+      };
+
+      const creditsText = values.use_credits === 'Yes' ? `Yes (${values.sil_amount} days)` : values.use_credits;
+      const fileText = fileInput.files[0] ? fileInput.files[0].name : 'None';
+
+      const summaryHtml = `
+        <div class="summary-row"><span class="summary-label">Name:</span><span class="summary-value">${values.employee_name}</span></div>
+        <div class="summary-row"><span class="summary-label">Leave Type:</span><span class="summary-value">${values.request_type}</span></div>
+        <div class="summary-row"><span class="summary-label">Start:</span><span class="summary-value">${formatDt(values.start_time)}</span></div>
+        <div class="summary-row"><span class="summary-label">End:</span><span class="summary-value">${formatDt(values.end_time)}</span></div>
+        <div class="summary-row"><span class="summary-label">Use Credits:</span><span class="summary-value">${creditsText}</span></div>
+        <div class="summary-row"><span class="summary-label">Reason:</span><span class="summary-value" style="font-weight:400;">${values.reason}</span></div>
+        <div class="summary-row"><span class="summary-label">Attachment:</span><span class="summary-value">${fileText}</span></div>
+      `;
+
+      document.getElementById('summaryBox').innerHTML = summaryHtml;
+      document.getElementById('confirmationModal').classList.add('active');
+    }
+
+    function closeConfirmation() {
+      document.getElementById('confirmationModal').classList.remove('active');
+    }
+
+    // ── Actual Submission ──
+    async function executeSubmission() {
+      const btn = document.getElementById('confirmSubmitBtn');
+      const initBtn = document.getElementById('initSubmitBtn');
+      
+      btn.disabled = true; 
+      btn.innerHTML = '<span class="spinner"></span>Submitting…';
+      initBtn.disabled = true;
 
       try {
-        const res = await fetch(WEBHOOK, { method: 'POST', body: fd });
+        const res = await fetch(WEBHOOK, { method: 'POST', body: pendingFormData });
         if (res.ok) {
-          // ⭐ Hide the form and show the definitive success state
+          closeConfirmation();
           document.getElementById('leaveForm').style.display = 'none';
           document.getElementById('successState').style.display = 'block';
-          
           showToast('Leave request submitted successfully!','success');
         } else {
           showToast(`Submission failed (${res.status}). Please try again.`,'error');
@@ -703,9 +807,11 @@
       } catch {
         showToast('Network error. Please check your connection.','error');
       } finally {
-        btn.disabled = false; btn.textContent = 'Submit Leave Request';
+        btn.disabled = false; 
+        btn.textContent = 'Confirm & Submit';
+        initBtn.disabled = false;
       }
-    });
+    }
   </script>
 </body>
 </html>
