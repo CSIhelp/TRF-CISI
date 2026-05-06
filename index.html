@@ -1,817 +1,580 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Leave Request — Stewrd</title>
-  <link rel="icon" type="image/x-icon" href="./favicon.ico" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --brand:#2FAAE1;--brand-dark:#1d8ec4;--brand-darker:#1677a8;--brand-light:#e8f7fd;
-      --brand-mid:#bce8f8;--brand-text:#0d5f82;--bg:#f4f9fc;--topbar-bg:#ffffff;
-      --topbar-border:#d6edf7;--card-bg:#ffffff;--card-border:#d6edf7;--text-primary:#0d2d3a;
-      --text-secondary:#5a8fa4;--text-label:#1e5570;--input-bg:#f0f8fd;--input-border:#b8dff0;
-      --input-focus-shadow:rgba(47,170,225,0.15);--section-border:#d6edf7;--note-color:#7ab5ce;
-    }
-    body.dark {
-      --bg:#071820;--topbar-bg:#0d2535;--topbar-border:#1a3f55;--card-bg:#0d2535;
-      --card-border:#1a3f55;--text-primary:#e0f4fd;--text-secondary:#7ab5ce;--text-label:#a8d8ee;
-      --input-bg:#071820;--input-border:#1a3f55;--input-focus-shadow:rgba(47,170,225,0.25);
-      --section-border:#1a3f55;--note-color:#3d7a96;
-    }
-    body{font-family:'Inter',sans-serif;background:var(--bg);min-height:100vh;color:var(--text-primary);transition:background .2s,color .2s;}
-    .topbar{background:var(--topbar-bg);border-bottom:1px solid var(--topbar-border);padding:0 32px;height:60px;display:flex;align-items:center;gap:12px;}
-    .brand-name{display:flex;align-items:center;}
-    .brand-name img{max-height:34px;width:auto;display:block;}
-    .brand-sep{width:1px;height:18px;background:var(--topbar-border);margin:0 4px;}
-    .brand-module{font-size:13px;color:var(--text-secondary);}
-    .topbar-right{margin-left:auto;}
-    .dark-toggle{background:none;border:1px solid var(--input-border);border-radius:20px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:500;color:var(--text-secondary);display:flex;align-items:center;gap:6px;transition:all .15s;font-family:'Inter',sans-serif;}
-    .dark-toggle:hover{border-color:var(--brand);color:var(--brand);}
-    .page{max-width:640px;margin:40px auto;padding:0 20px 60px;}
-    .page-heading{font-size:20px;font-weight:600;color:var(--text-primary);margin-bottom:4px;}
-    .page-sub{font-size:13px;color:var(--text-secondary);margin-bottom:28px;}
-    .card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:32px;transition:background .2s,border-color .2s;box-shadow:0 2px 12px rgba(47,170,225,0.07);}
-    .section{margin-bottom:28px;}
-    .section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--brand);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--section-border);}
-    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-    @media(max-width:480px){.grid-2{grid-template-columns:1fr;}.card{padding:24px 18px;}}
-    .field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
-    .field:last-child{margin-bottom:0;}
-    label{font-size:12px;font-weight:500;color:var(--text-label);}
-    .req{color:var(--brand);}
-    input,select,textarea{background:var(--input-bg);border:1px solid var(--input-border);border-radius:7px;padding:9px 12px;font-family:'Inter',sans-serif;font-size:13.5px;color:var(--text-primary);width:100%;outline:none;transition:border-color .15s,box-shadow .15s,background .2s;-webkit-appearance:none;}
-    input:focus,select:focus,textarea:focus{border-color:var(--brand);background:var(--card-bg);box-shadow:0 0 0 3px var(--input-focus-shadow);}
-    input::placeholder,textarea::placeholder{color:var(--text-secondary);}
-    input:disabled,select:disabled{opacity:.6;cursor:not-allowed;}
-    select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%232FAAE1' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;}
-    select option{background:var(--card-bg);color:var(--text-primary);}
-    textarea{resize:vertical;min-height:84px;line-height:1.55;}
-    .pin-wrap{position:relative;}
-    .pin-wrap input{padding-right:38px;letter-spacing:3px;}
-    .pin-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:15px;padding:2px;line-height:1;transition:color .15s;}
-    .pin-eye:hover{color:var(--brand);}
-    .verify-row{display:flex;gap:8px;margin-top:10px;}
-    .btn-verify{padding:9px 16px;background:var(--brand);border:none;border-radius:7px;color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s;white-space:nowrap;flex-shrink:0;}
-    .btn-verify:hover{background:var(--brand-dark);}
-    .btn-verify:disabled{background:var(--brand-mid);cursor:not-allowed;}
-    .employee-card{display:none;margin-top:12px;background:#e8f7fd;border:1px solid var(--brand-mid);border-radius:10px;padding:14px 16px;gap:12px;}
-    body.dark .employee-card{background:#0d2535;border-color:#1d5e7a;}
-    .employee-card.show{display:flex;align-items:flex-start;}
-    .employee-card-icon{font-size:22px;flex-shrink:0;margin-top:2px;}
-    .employee-card-info{flex:1;}
-    .employee-card-name{font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:2px;}
-    .employee-card-meta{font-size:12px;color:var(--text-secondary);margin-bottom:8px;}
-    .sil-badge{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--brand-mid);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--brand-text);}
-    body.dark .sil-badge{background:#071820;border-color:#1d5e7a;color:#7ad4f0;}
-    .sil-badge.low{background:#fefce8;border-color:#fde68a;color:#92400e;}
-    body.dark .sil-badge.low{background:#422006;border-color:#92400e;color:#fde68a;}
-    .sil-badge.empty{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
-    body.dark .sil-badge.empty{background:#450a0a;border-color:#991b1b;color:#fca5a5;}
-    .credits-info{display:none;margin-top:6px;background:var(--brand-light);border:1px solid var(--brand-mid);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--brand-text);line-height:1.5;}
-    body.dark .credits-info{background:#0d2535;border-color:#1d5e7a;color:#7ad4f0;}
-    .credits-info.show{display:block;}
-    .sil-amount-field{display:none;margin-top:10px;}
-    .sil-amount-field.show{display:flex;flex-direction:column;gap:5px;}
-    .sil-amount-hint{font-size:11px;color:var(--note-color);margin-top:4px;line-height:1.5;}
-    .sil-amount-hint strong{color:var(--text-primary);}
-    .sil-input-wrap{position:relative;}
-    .sil-input-wrap input{padding-right:60px;}
-    .sil-unit{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text-secondary);font-weight:500;pointer-events:none;}
-    .sil-remaining{display:none;margin-top:6px;padding:8px 12px;border-radius:7px;font-size:12px;font-weight:500;}
-    .sil-remaining.ok{display:block;background:#e8f7fd;border:1px solid var(--brand-mid);color:var(--brand-text);}
-    .sil-remaining.warn{display:block;background:#fefce8;border:1px solid #fde68a;color:#92400e;}
-    .sil-remaining.err{display:block;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;}
-    body.dark .sil-remaining.ok{background:#071820;border-color:#1d5e7a;color:#7ad4f0;}
-    body.dark .sil-remaining.warn{background:#422006;border-color:#92400e;color:#fde68a;}
-    body.dark .sil-remaining.err{background:#450a0a;border-color:#991b1b;color:#fca5a5;}
-    .employee-error{display:none;margin-top:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#991b1b;font-weight:500;}
-    body.dark .employee-error{background:#450a0a;border-color:#991b1b;color:#fca5a5;}
-    .employee-error.show{display:block;}
-    .verify-loading{display:none;margin-top:10px;font-size:12px;color:var(--text-secondary);align-items:center;gap:6px;}
-    .verify-loading.show{display:flex;}
-    .mini-spinner{display:inline-block;width:11px;height:11px;border:2px solid var(--input-border);border-top-color:var(--brand);border-radius:50%;animation:spin .65s linear infinite;}
-    .duration-banner{display:none;align-items:center;gap:10px;margin-top:10px;margin-bottom:14px;padding:10px 14px;border-radius:8px;font-size:12.5px;font-weight:500;line-height:1.4;}
-    .duration-banner.info{background:var(--brand-light);border:1px solid var(--brand-mid);color:var(--brand-text);}
-    .duration-banner.warning{background:#fefce8;border:1px solid #fde68a;color:#92400e;}
-    .duration-banner.error{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;}
-    body.dark .duration-banner.info{background:#0d2535;border-color:#1d5e7a;color:#7ad4f0;}
-    body.dark .duration-banner.warning{background:#422006;border-color:#92400e;color:#fde68a;}
-    body.dark .duration-banner.error{background:#450a0a;border-color:#991b1b;color:#fca5a5;}
-    .duration-banner.show{display:flex;}
-    .duration-banner-icon{font-size:16px;flex-shrink:0;}
-    .file-drop{border:1.5px dashed var(--input-border);border-radius:7px;background:var(--input-bg);padding:20px 16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;position:relative;}
-    .file-drop:hover,.file-drop.dragover{border-color:var(--brand);background:var(--brand-light);}
-    body.dark .file-drop:hover,body.dark .file-drop.dragover{background:#0d2535;}
-    .file-drop input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;border:none;padding:0;background:none;}
-    .file-drop-icon{font-size:22px;margin-bottom:6px;display:block;}
-    .file-drop-text{font-size:13px;color:var(--text-secondary);line-height:1.5;}
-    .file-drop-text strong{color:var(--brand);font-weight:500;}
-    .file-drop-hint{font-size:11px;color:var(--note-color);margin-top:4px;}
-    .file-chip{display:none;align-items:center;gap:8px;margin-top:8px;background:var(--brand-light);border:1px solid var(--brand-mid);border-radius:6px;padding:7px 10px;font-size:12px;color:var(--brand-text);}
-    body.dark .file-chip{background:#0d2535;border-color:#1d5e7a;color:#7ad4f0;}
-    .file-chip.show{display:flex;}
-    .file-chip-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .file-chip-remove{background:none;border:none;cursor:pointer;color:var(--brand-mid);font-size:14px;line-height:1;padding:0;transition:color .15s;flex-shrink:0;}
-    .file-chip-remove:hover{color:var(--brand-dark);}
-    .submit-row{margin-top:28px;display:flex;flex-direction:column;gap:10px;}
-    .btn-submit{width:100%;padding:11px 20px;background:var(--brand);border:none;border-radius:8px;color:#fff;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s,transform .1s;}
-    .btn-submit:hover{background:var(--brand-dark);}
-    .btn-submit:active{transform:scale(.99);}
-    .btn-submit:disabled{background:var(--brand-mid);cursor:not-allowed;}
-    .note{text-align:center;font-size:11.5px;color:var(--note-color);}
-    .reason-counter{text-align:right;font-size:11px;color:var(--note-color);margin-top:4px;transition:color .15s;}
-    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#0d2535;color:#fff;font-size:13px;font-weight:500;padding:11px 20px;border-radius:8px;display:flex;align-items:center;gap:8px;z-index:999;opacity:0;transition:transform .35s ease,opacity .3s;white-space:nowrap;box-shadow:0 4px 16px rgba(47,170,225,0.2);}
-    .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
-    .toast.success{background:#059669;}
-    .toast.error{background:#991b1b;}
-    .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.35);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;vertical-align:middle;margin-right:6px;}
-    @keyframes spin{to{transform:rotate(360deg);}}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrowdSource – SIL Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-    /* ── Confirmation Modal Styles ── */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(3px); }
-    .modal-overlay.active { display: flex; }
-    .modal-content { background: var(--card-bg); width: 440px; max-width: 92%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); overflow: hidden; animation: popIn 0.2s ease; display: flex; flex-direction: column; border: 1px solid var(--card-border); }
-    @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    .modal-header { padding: 18px 24px; border-bottom: 1px solid var(--section-border); display: flex; justify-content: space-between; align-items: center; }
-    .modal-header h2 { font-size: 16px; font-weight: 600; color: var(--text-primary); }
-    .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-secondary); line-height: 1; transition: color 0.15s; }
-    .modal-close:hover { color: var(--brand); }
-    .modal-body { padding: 24px; font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
-    .summary-box { background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 8px; padding: 16px; margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
-    .summary-row { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--section-border); padding-bottom: 8px; }
-    .summary-row:last-child { border-bottom: none; padding-bottom: 0; }
-    .summary-label { font-weight: 500; color: var(--text-label); flex-shrink: 0; }
-    .summary-value { color: var(--text-primary); text-align: right; font-weight: 600; word-break: break-word; }
-    .modal-footer { padding: 16px 24px; border-top: 1px solid var(--section-border); display: flex; gap: 10px; background: var(--bg); }
-    .modal-footer .btn { flex: 1; justify-content: center; padding: 11px 0; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 500; cursor: pointer; transition: all 0.15s; border: 1px solid var(--input-border); background: var(--card-bg); color: var(--text-primary); }
-    .modal-footer .btn:hover { background: var(--input-bg); }
-    .modal-footer .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
-    .modal-footer .btn-primary:hover { background: var(--brand-dark); }
-    .modal-footer .btn-primary:disabled { background: var(--brand-mid); border-color: var(--brand-mid); cursor: not-allowed; }
-  </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const _supabaseUrl = 'https://vuycjivcpyncmaiikpfe.supabase.co';
+  const _supabaseKey = 'sb_publishable_5StoCQqroJgcqn_Z4NDzqQ_LVXXHabG';
+  const _supabase = window.supabase.createClient(_supabaseUrl, _supabaseKey);
+  async function checkAuth() {
+    const { data: { session }, error } = await _supabase.auth.getSession();
+    if (!session || error) window.location.replace('index.html');
+  }
+  checkAuth();
+  async function logOut() { await _supabase.auth.signOut(); window.location.replace('index.html'); }
+</script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f4f5f7; --sidebar-bg: #fff; --topbar-bg: #1a1a2e;
+    --accent: #1565c0; --accent-light: #e8f0fe;
+    --text-primary: #1a1a2e; --text-secondary: #6b7280; --text-muted: #9ca3af;
+    --border: #e5e7eb; --row-hover: #f9fafb; --radius: 10px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.07); --shadow-lg: 0 10px 25px rgba(0,0,0,.1);
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; }
+
+  .topbar { background: var(--topbar-bg); display: flex; align-items: center; padding: 0 28px; height: 70px; gap: 20px; flex-shrink: 0; }
+  .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
+  .logo-text { font-size: 15px; font-weight: 600; color: #fff; letter-spacing: .5px; }
+  .logo-text span { color: #64b5f6; }
+  .topbar-user { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .topbar-user-name { text-align: right; color: #fff; line-height: 1.3; }
+  .topbar-user-name strong { display: block; font-size: 13.5px; font-weight: 600; }
+  .topbar-user-name span { font-size: 12px; color: rgba(255,255,255,.55); }
+  .avatar { width: 40px; height: 40px; background: rgba(255,255,255,.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.8); }
+
+  .layout { display: flex; flex: 1; overflow: hidden; }
+  .sidebar { width: 210px; background: var(--sidebar-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 0; flex-shrink: 0; }
+  .nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 20px; font-size: 13.5px; font-weight: 500; color: var(--text-secondary); text-decoration: none; transition: background .15s, color .15s; cursor: pointer; border: none; background: none; width: 100%; text-align: left; }
+  .nav-item:hover { background: var(--accent-light); color: var(--accent); }
+  .nav-item.active { color: var(--accent); background: var(--accent-light); font-weight: 600; }
+  .nav-item svg { flex-shrink: 0; opacity: .7; }
+  .nav-item.active svg { opacity: 1; }
+  .nav-divider { height: 1px; background: var(--border); margin: 12px 16px; }
+  .nav-bottom { margin-top: auto; }
+
+  .main { flex: 1; overflow-y: auto; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; }
+  .main::-webkit-scrollbar { width: 6px; }
+  .main::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+
+  .page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .page-title { font-size: 20px; font-weight: 700; }
+  .page-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .search-input { border: 1.5px solid var(--border); border-radius: 8px; padding: 9px 14px 9px 36px; font-family: inherit; font-size: 13.5px; color: var(--text-primary); outline: none; transition: border .2s; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat left 12px center; width: 230px; }
+  .search-input:focus { border-color: var(--accent); }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; background: #fff; color: var(--text-secondary); border: 1.5px solid var(--border); border-radius: 8px; padding: 9px 14px; font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: all .2s; white-space: nowrap; }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.primary:hover { background: #0f4c92; }
+  .btn.success { background: #15803d; color: #fff; border-color: #15803d; }
+  .btn.success:hover { background: #166534; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .btn.loading svg { animation: spin .7s linear infinite; }
+
+  .error-banner { display: none; align-items: center; gap: 10px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #dc2626; }
+  .error-banner.visible { display: flex; }
+
+  .table-card { background: #fff; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm); overflow: hidden; display: flex; flex-direction: column; }
+  .table-scroll { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 260px); }
+  .table-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+  .table-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+
+  table { width: 100%; border-collapse: collapse; min-width: 720px; }
+  thead th { position: sticky; top: 0; z-index: 2; text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--text-muted); padding: 12px 18px; background: #fafbfc; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--row-hover); }
+  tbody td { padding: 13px 18px; font-size: 13px; vertical-align: middle; }
+
+  .emp-name { font-weight: 600; }
+  .emp-sub { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  .mono { font-family: 'DM Mono', monospace; font-size: 12.5px; }
+  .bal-positive { color: #15803d; font-weight: 700; }
+  .bal-zero { color: var(--text-muted); font-weight: 600; }
+  .bal-negative { color: #dc2626; font-weight: 700; }
+
+  .state-row td { text-align: center; padding: 48px !important; color: var(--text-muted); font-size: 13.5px; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #ccc; border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; margin-right: 6px; vertical-align: middle; }
+
+  /* LEDGER ROW */
+  .ledger-row { display: none; }
+  .ledger-row.open { display: table-row; }
+  .ledger-panel { padding: 0 18px 16px; background: #f8fbff; border-bottom: 2px solid var(--accent); }
+  .ledger-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 10px; }
+  .ledger-title { font-size: 13px; font-weight: 700; color: var(--accent); }
+
+  /* LEDGER TABS */
+  .ledger-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .ledger-tab { padding: 5px 14px; border-radius: 20px; font-family: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer; border: none; background: #e3f2fd; color: #1565c0; transition: all .15s; }
+  .ledger-tab:hover { background: #bbdefb; }
+  .ledger-tab.active { background: #2196f3; color: #fff; }
+
+  /* LEDGER TABLE */
+  .ledger-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .ledger-table th { background: #e3f2fd; color: #1565c0; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 7px 12px; text-align: left; }
+  .ledger-table td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+  .ledger-table tr:last-child td { border-bottom: none; }
+  .ledger-empty { text-align: center; padding: 24px; color: var(--text-muted); font-size: 12.5px; }
+
+  .type-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 2px 8px; border-radius: 20px; }
+  .type-opening    { background: #e8f0fe; color: #1565c0; }
+  .type-accrual    { background: #e6f9f0; color: #15803d; }
+  .type-leave_used { background: #fef2f2; color: #dc2626; }
+  .type-adjustment { background: #fff8e1; color: #b45309; }
+  .amt-pos { color: #15803d; font-weight: 600; }
+  .amt-neg { color: #dc2626; font-weight: 600; }
+
+  /* CALENDAR */
+  .cal-wrap { display: none; }
+  .cal-wrap.active { display: block; }
+  .cal-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .cal-nav-btn { background: none; border: 1.5px solid var(--border); border-radius: 6px; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--text-secondary); transition: all .15s; }
+  .cal-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .cal-month-label { font-size: 13px; font-weight: 700; color: var(--text-primary); min-width: 140px; text-align: center; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-hdr { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); text-align: center; padding: 4px 0; letter-spacing: .06em; }
+  .cal-day { min-height: 40px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; color: var(--text-secondary); position: relative; transition: background .1s; }
+  .cal-day.empty { background: transparent; }
+  .cal-day.today { background: #e8f0fe; font-weight: 700; color: var(--accent); }
+  .cal-day.weekend { color: #d1d5db; }
+  .cal-day .cal-num { font-weight: 600; font-size: 12px; line-height: 1; }
+  .cal-day .cal-tag { font-size: 9px; font-weight: 700; border-radius: 3px; padding: 1px 4px; line-height: 1.2; }
+  .cal-tag.accrual    { background: #dcfce7; color: #15803d; }
+  .cal-tag.leave_used { background: #fee2e2; color: #dc2626; }
+  .cal-tag.opening    { background: #dbeafe; color: #1565c0; }
+  .cal-tag.adjustment { background: #fef3c7; color: #92400e; }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(2px); }
+  .modal-overlay.active { display: flex; }
+  .modal { background: #fff; width: 480px; max-width: 92%; border-radius: 12px; box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; }
+  .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+  .modal-header h2 { font-size: 15px; font-weight: 700; }
+  .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); line-height: 1; }
+  .modal-body { padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+  .modal-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; background: #fafbfc; flex-shrink: 0; }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+  .form-group input, .form-group select { padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 13px; color: var(--text-primary); outline: none; background: #fff; transition: border .2s; width: 100%; }
+  .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+  .form-group select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 32px; cursor: pointer; }
+  .req { color: #dc2626; margin-left: 2px; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1a1a2e; color: #fff; font-size: 13px; font-weight: 500; padding: 12px 24px; border-radius: 8px; display: flex; align-items: center; gap: 8px; z-index: 9999; opacity: 0; transition: transform .3s, opacity .3s; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,.15); }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .toast.success { background: #16a34a; }
+  .toast.error { background: #dc2626; }
+
+  .pagination-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-top: 1px solid var(--border); background: #fafbfc; flex-wrap: wrap; gap: 10px; flex-shrink: 0; }
+  .pagination-info { font-size: 12.5px; color: var(--text-muted); }
+  .pagination-controls { display: flex; gap: 4px; }
+  .page-btn { min-width: 32px; height: 32px; padding: 0 8px; border: 1.5px solid var(--border); border-radius: 6px; background: #fff; font-family: inherit; font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; justify-content: center; }
+  .page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .page-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .page-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .page-size-select { border: 1.5px solid var(--border); border-radius: 6px; padding: 5px 10px; font-family: inherit; font-size: 12.5px; color: var(--text-secondary); outline: none; cursor: pointer; }
+</style>
 </head>
 <body>
 
-  <script>
-    // ── IN-APP & IFRAME DETECTOR ──
-    const isIframe = window !== window.parent;
-    const isMobileApp = /FBAV|FBAN|Line|Viber|MicroMessenger|Instagram|Snapchat|Teams|Electron/i.test(navigator.userAgent);
-    
-    if (isIframe || isMobileApp) {
-        document.body.insertAdjacentHTML('afterbegin', `
-            <div style="background: #fefce8; border-bottom: 1px solid #fde68a; padding: 12px 20px; text-align: center; color: #92400e; font-size: 13px; font-weight: 500; z-index: 9999; position: relative;">
-                ⚠️ You are viewing this in an embedded browser. To ensure your file uploads and submission work correctly, please 
-                <a href="${window.location.href}" target="_blank" style="color: #d97706; text-decoration: underline; font-weight: 700;">open this page in a new tab</a>.
-            </div>
-        `);
-    }
-  </script>
-
-  <div class="topbar">
-    <div class="brand-name"><img src="stewrd-logo.png" alt="Stewrd Logo"></div>
-    <div class="brand-sep"></div>
-    <div class="brand-module">Leave Management</div>
-    <div class="topbar-right">
-      <button class="dark-toggle" id="darkToggle" onclick="toggleDark()">
-        <span id="darkIcon">🌙</span><span id="darkLabel">Dark</span>
-      </button>
-    </div>
+<header class="topbar">
+  <a class="logo" href="#"><span class="logo-text"><span>CROWD</span>SOURCE</span></a>
+  <div class="topbar-user">
+    <div class="topbar-user-name"><strong>HR Admin</strong><span>Human Resources</span></div>
+    <div class="avatar"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
   </div>
+</header>
 
-  <div class="page">
-    <div class="page-heading">Leave Request</div>
-    <div class="page-sub">Fill out the form below to submit your leave application.</div>
-    <div class="card">
-      
-      <form id="leaveForm" novalidate onsubmit="event.preventDefault();">
-
-        <div class="section">
-          <div class="section-title">Employee Information</div>
-          <div class="grid-2">
-            <div class="field">
-              <label>Full Name <span class="req">*</span></label>
-              <input type="text" id="employee_name" placeholder="e.g. Juan Dela Cruz" required />
-            </div>
-            <div class="field">
-              <label>Employee PIN <span class="req">*</span></label>
-              <div class="pin-wrap">
-                <input type="password" id="employee_pin" placeholder="••••" maxlength="8" required />
-                <button type="button" class="pin-eye" onclick="togglePin(this)">👁</button>
-              </div>
-            </div>
-          </div>
-          <div class="verify-row">
-            <button type="button" class="btn-verify" id="verifyBtn" onclick="verifyEmployee()">🔍 Verify Identity</button>
-          </div>
-          <div class="verify-loading" id="verifyLoading">
-            <span class="mini-spinner"></span>
-            <span>Verifying employee details…</span>
-          </div>
-          <div class="employee-card" id="employeeCard">
-            <div class="employee-card-icon">✅</div>
-            <div class="employee-card-info">
-              <div class="employee-card-name" id="verifiedName"></div>
-              <div class="employee-card-meta" id="verifiedMeta"></div>
-              <div class="sil-badge" id="silBadge">
-                <span>🏖️</span><span id="silText"></span>
-              </div>
-            </div>
-          </div>
-          <div class="employee-error" id="employeeError"></div>
-          <div class="grid-2" style="margin-top:16px">
-            <div class="field">
-              <label>Department <span class="req">*</span></label>
-              <select id="department" required>
-                <option value="" disabled selected>Loading departments…</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Job Title</label>
-              <input type="text" id="job_title" placeholder="e.g. HR Specialist" />
-            </div>
-          </div>
-          <div class="field">
-            <label>Email Address <span class="req">*</span></label>
-            <input type="email" id="email" placeholder="your.email@company.com" required />
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Request Details</div>
-          <div class="field">
-            <label>Request Type <span class="req">*</span></label>
-            <select id="request_type" required>
-              <option value="" disabled selected>Select leave type</option>
-              <option value="Sick">Sick Leave</option>
-              <option value="Vacation">Vacation Leave</option>
-              <option value="Emergency">Emergency Leave</option>
-              <option value="Bereavement">Bereavement Leave</option>
-              <option value="Undertime">Undertime</option>
-              <option value="Overtime">Overtime</option>
-              <option value="Absence">Unpaid Leave / Absence</option>
-              <option value="Tardiness">Tardiness</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="grid-2">
-            <div class="field">
-              <label>Start Date & Time <span class="req">*</span></label>
-              <input type="datetime-local" id="start_time" required />
-            </div>
-            <div class="field">
-              <label>End Date & Time <span class="req">*</span></label>
-              <input type="datetime-local" id="end_time" required />
-            </div>
-          </div>
-          <div class="duration-banner" id="durationBanner">
-            <span class="duration-banner-icon" id="durationIcon"></span>
-            <span id="durationMsg"></span>
-          </div>
-          <div class="field">
-            <label>Use Leave Credits? <span class="req">*</span></label>
-            <select id="use_credits" required onchange="updateCreditsInfo()">
-              <option value="" disabled selected>Select an option</option>
-              <option value="Yes">Yes — deduct from my leave credits</option>
-              <option value="No">No — do not use leave credits</option>
-            </select>
-            <div class="credits-info" id="creditsInfo"></div>
-            <div class="sil-amount-field" id="silAmountField">
-              <label>SIL Credits to Use <span class="req">*</span></label>
-              <div class="sil-input-wrap">
-                <input type="number" id="sil_amount" min="0.5" step="0.5" placeholder="e.g. 1.0" oninput="validateSilAmount()" />
-                <span class="sil-unit">day(s)</span>
-              </div>
-              <div class="sil-amount-hint">Enter in 0.5 increments. You have <strong id="silAvailable">0</strong> SIL day(s) available.</div>
-              <div class="sil-remaining" id="silRemaining"></div>
-            </div>
-          </div>
-          <div class="field" style="margin-bottom:0">
-            <label>Reason / Notes</label>
-            <textarea
-              id="reason"
-              placeholder="Optional — briefly describe the reason for your leave…"
-              maxlength="100"
-              oninput="updateReasonCounter()"
-            ></textarea>
-            <div class="reason-counter" id="reasonCounter">0 / 100</div>
-          </div>
-        </div>
-
-        <div class="section" style="margin-bottom:0">
-          <div class="section-title">Supporting Document</div>
-          <div class="field" style="margin-bottom:0">
-            <label>Upload File <span style="color:var(--note-color);font-weight:400">(PDF, PNG, DOC/DOCX — max 10MB)</span></label>
-            <div class="file-drop" id="fileDrop">
-              <input type="file" id="supporting_doc" accept=".pdf,.png,.doc,.docx" />
-              <span class="file-drop-icon">📎</span>
-              <div class="file-drop-text"><strong>Click to upload</strong> or drag and drop</div>
-              <div class="file-drop-hint">PDF, PNG, DOC, DOCX — max 10MB</div>
-            </div>
-            <div class="file-chip" id="fileChip">
-              <span>📄</span>
-              <span class="file-chip-name" id="fileName"></span>
-              <button type="button" class="file-chip-remove" onclick="clearFile()">✕</button>
-            </div>
-          </div>
-        </div>
-
-        <input type="hidden" id="company_id" value="1710054938201" />
-
-        <div class="submit-row">
-          <button type="button" class="btn-submit" id="initSubmitBtn" onclick="initiateSubmission()">Review & Submit</button>
-          <div class="note">🔒 Securely submitted through HR systems</div>
-        </div>
-        <div style="text-align:center;margin-top:16px;">
-          <img src="stewrd-logo.png" alt="Stewrd Logo" style="height:40px;object-fit:contain;opacity:0.7;" />
-        </div>
-      </form>
-      
-      <div id="successState" style="display: none; text-align: center; padding: 40px 20px;">
-        <div style="font-size: 48px; margin-bottom: 16px;">🎉</div>
-        <h2 style="font-size: 20px; color: var(--text-primary); margin-bottom: 8px;">TRF Submitted Successfully!</h2>
-        <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 24px;">Your supervisor has been notified. You can safely close this tab.</p>
-        <button type="button" onclick="window.location.reload()" class="btn-verify" style="background: var(--brand-mid); color: var(--brand-text);">Submit Another Request</button>
-      </div>
-
+<div class="layout">
+  <nav class="sidebar">
+    <a class="nav-item" href="homepage.html"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>TRF Dashboard</a>
+    <a class="nav-item" href="timesheets.html"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Timesheets</a>
+    <a class="nav-item" href="#"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>HR Closing Letters</a>
+    <a class="nav-item" href="hr-database.html"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>HR Database</a>
+    <a class="nav-item" href="#"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>Onboarding</a>
+    <a class="nav-item" href="#"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Background Investigation</a>
+    <a class="nav-item active" href="sil_tracker.html"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>SIL Dashboard</a>
+    <a class="nav-item" href="#"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Exit Letters</a>
+    <div class="nav-divider"></div>
+    <div class="nav-bottom">
+      <a class="nav-item" href="#"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Help</a>
+      <a class="nav-item" href="#" onclick="logOut();return false;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout</a>
     </div>
-  </div>
+  </nav>
 
-  <div class="modal-overlay" id="confirmationModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Confirm Details</h2>
-        <button type="button" class="modal-close" onclick="closeConfirmation()">✕</button>
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Service Incentive Leave (SIL)</div>
+        <div class="page-subtitle">Transaction ledger and calendar view for all regular employees.</div>
       </div>
-      <div class="modal-body">
-        Please double-check your leave request details below before submitting.
-        <div class="summary-box" id="summaryBox">
-          </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn" onclick="closeConfirmation()">Edit Details</button>
-        <button type="button" class="btn btn-primary" id="confirmSubmitBtn" onclick="executeSubmission()">Confirm & Submit</button>
+      <div class="controls">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search employees..." oninput="applyFilter()">
+        <button class="btn" id="refreshBtn" onclick="loadSILData()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Refresh
+        </button>
+        <button class="btn success" onclick="openAddEntryModal(null)">+ Add Entry</button>
+        <button class="btn" style="background:#1a1a2e;color:#fff;" onclick="openAddEmployeeModal()">+ Add Employee</button>
       </div>
     </div>
+
+    <div class="error-banner" id="errorBanner"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span id="errorMsg"></span></div>
+
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th style="width:32px"></th>
+            <th>Employee</th>
+            <th>Department</th>
+            <th>Job Title</th>
+            <th style="text-align:center">SIL Balance</th>
+            <th style="text-align:center">YTD Used</th>
+            <th style="text-align:center">YTD Accrued</th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody id="tableBody"><tr class="state-row"><td colspan="8"><span class="spinner"></span> Loading...</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pagination-bar" id="paginationBar" style="display:none">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="pagination-info" id="pageInfo"></span>
+          <select class="page-size-select" id="pageSizeSelect" onchange="currentPage=1;renderTable()">
+            <option value="10">10 / page</option><option value="25" selected>25 / page</option><option value="50">50 / page</option>
+          </select>
+        </div>
+        <div class="pagination-controls" id="pageControls"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ADD ENTRY MODAL -->
+<div class="modal-overlay" id="entryModal">
+  <div class="modal">
+    <div class="modal-header"><h2 id="entryModalTitle">Add Ledger Entry</h2><button class="modal-close" onclick="closeEntryModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group" id="entryEmpGroup"><label>Employee<span class="req">*</span></label><select id="entry_emp_id"><option value="">— Select Employee —</option></select></div>
+      <div class="form-group"><label>Date<span class="req">*</span></label><input type="date" id="entry_date"></div>
+      <div class="form-group"><label>Type<span class="req">*</span></label><select id="entry_type"><option value="">— Select Type —</option><option value="opening">Opening Balance</option><option value="accrual">Accrual</option><option value="leave_used">Leave Used</option><option value="adjustment">Adjustment</option></select></div>
+      <div class="form-group"><label>Amount<span class="req">*</span> <span style="font-size:11px;color:var(--text-muted)">(negative for deductions e.g. -1)</span></label><input type="number" step="0.5" id="entry_amount" placeholder="e.g. 0.5 or -1"></div>
+      <div class="form-group"><label>Notes</label><input type="text" id="entry_notes" placeholder="Optional notes"></div>
+      <div class="form-group"><label>TRF UID <span style="font-size:11px;color:var(--text-muted)">(if linked to a TRF)</span></label><input type="text" id="entry_trf_uid" placeholder="Optional TRF reference"></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeEntryModal()">Cancel</button><button class="btn primary" onclick="saveEntry()" id="saveEntryBtn">Save Entry</button></div>
   </div>
+</div>
 
-  <div class="toast" id="toast"><span id="toastIcon"></span><span id="toastMsg"></span></div>
+<!-- ADD EMPLOYEE MODAL -->
+<div class="modal-overlay" id="addEmpModal">
+  <div class="modal">
+    <div class="modal-header"><h2>Add Employee to SIL Ledger</h2><button class="modal-close" onclick="closeAddEmployeeModal()">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-secondary);line-height:1.5">Use this when onboarding a newly regularized employee. Creates an opening balance entry.</p>
+      <div class="form-group"><label>Employee<span class="req">*</span></label><select id="new_emp_id"><option value="">— Select Employee —</option></select></div>
+      <div class="form-group"><label>Regularization Date<span class="req">*</span></label><input type="date" id="new_reg_date"></div>
+      <div class="form-group"><label>Opening SIL Balance</label><input type="number" step="0.5" id="new_opening_bal" value="0" placeholder="e.g. 0 or 1.5"></div>
+      <div class="form-group"><label>Notes</label><input type="text" id="new_notes" placeholder="e.g. Regularized — opening balance"></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeAddEmployeeModal()">Cancel</button><button class="btn primary" onclick="saveNewEmployee()" id="saveNewEmpBtn">Add to Ledger</button></div>
+  </div>
+</div>
 
-  <script>
-    const WEBHOOK         = "https://primary-production-a810.up.railway.app/webhook/ddeb7597-8a11-4502-bb87-6f0e803a1c5f";
-    const VERIFY_URL      = "https://primary-production-a810.up.railway.app/webhook/verify-employee";
-    const DEPARTMENTS_URL = "https://primary-production-a810.up.railway.app/webhook/get-departments";
-    const MAX_DAYS        = 14;
-    const MAX_FILE_SIZE   = 10 * 1024 * 1024;
-    const ALLOWED_EXTS    = ['.pdf','.png','.doc','.docx'];
-    const ALLOWED_TYPES   = ['application/pdf','image/png','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    const NO_CREDITS_TYPES = ['Tardiness','Overtime','Undertime','Other'];
-    const HOURLY_TYPES     = ['Overtime','Undertime','Tardiness'];
+<div class="toast" id="toast"><span id="toastIcon"></span><span id="toastMsg"></span></div>
 
-    let employeeVerified     = false;
-    let currentSIL           = 0;
-    let verifiedEmployeeId   = null;
-    let pendingFormData      = null; // Stores data for final submission
+<script>
+const GET_SIL_URL    = 'https://primary-production-a810.up.railway.app/webhook/get-all-sil';
+const GET_LEDGER_URL = 'https://primary-production-a810.up.railway.app/webhook/get-sil-ledger';
+const ADD_ENTRY_URL  = 'https://primary-production-a810.up.railway.app/webhook/add-sil-ledger-entry';
 
-    // ── Load Departments ──
-    async function loadDepartments() {
-      const sel = document.getElementById('department');
-      try {
-        const res  = await fetch(DEPARTMENTS_URL);
-        const raw  = await res.json();
-        const rows = Array.isArray(raw) ? raw.map(i => i.json ?? i) : [];
-        sel.innerHTML = '<option value="" disabled selected>Select department</option>';
-        rows.forEach(dept => {
-          const opt = document.createElement('option');
-          opt.value = dept.name; opt.textContent = dept.name;
-          sel.appendChild(opt);
-        });
-        window.deptMap = {};
-        rows.forEach(dept => { window.deptMap[dept.name] = dept.name; });
-      } catch (err) {
-        console.error('Failed to load departments:', err);
-        sel.innerHTML = '<option value="" disabled selected>Select department</option>';
-      }
+let allData=[], filteredData=[], currentPage=1;
+let openLedgers={};
+let calendarMonths={};  // empId -> {year, month}
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function getPageSize(){return parseInt(document.getElementById('pageSizeSelect').value)}
+
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  document.getElementById('toastIcon').textContent=type==='success'?'✅':'❌';
+  document.getElementById('toastMsg').textContent=msg;
+  t.className=`toast ${type} show`;
+  setTimeout(()=>t.classList.remove('show'),4000);
+}
+function showError(msg){document.getElementById('errorMsg').textContent=msg;document.getElementById('errorBanner').classList.add('visible');}
+function clearError(){document.getElementById('errorBanner').classList.remove('visible');}
+
+function fmtDate(d){if(!d)return'—';return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function balClass(n){if(n>0)return'bal-positive';if(n<0)return'bal-negative';return'bal-zero';}
+
+// ── LOAD ──
+async function loadSILData(){
+  clearError();
+  const btn=document.getElementById('refreshBtn');
+  btn.classList.add('loading');
+  document.getElementById('tableBody').innerHTML='<tr class="state-row"><td colspan="8"><span class="spinner"></span> Loading SIL data...</td></tr>';
+  document.getElementById('paginationBar').style.display='none';
+  openLedgers={};calendarMonths={};
+  try{
+    const res=await fetch(GET_SIL_URL);
+    const data=await res.json();
+    allData=Array.isArray(data)?data:(data.employees||[]);
+    applyFilter();
+  }catch{
+    showError('Failed to load SIL data.');
+    document.getElementById('tableBody').innerHTML='<tr class="state-row"><td colspan="8">Error loading data.</td></tr>';
+  }finally{btn.classList.remove('loading');}
+}
+
+function applyFilter(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  filteredData=allData.filter(emp=>{
+    const name=(emp.employee_name||emp.name||'').toLowerCase();
+    const dept=(emp.department||'').toLowerCase();
+    return !q||name.includes(q)||dept.includes(q);
+  });
+  currentPage=1;renderTable();
+}
+
+function renderTable(){
+  const tbody=document.getElementById('tableBody');
+  const pBar=document.getElementById('paginationBar');
+  if(!filteredData.length){tbody.innerHTML='<tr class="state-row"><td colspan="8">No employees found.</td></tr>';pBar.style.display='none';return;}
+
+  const ps=getPageSize(),total=Math.ceil(filteredData.length/ps);
+  if(currentPage>total)currentPage=total;
+  const start=(currentPage-1)*ps,items=filteredData.slice(start,start+ps);
+
+  tbody.innerHTML=items.map(emp=>{
+    const empId=emp.id||emp.employee_id;
+    const sil=parseFloat(emp.sil_balance??0);
+    const ytdUsed=parseFloat(emp.ytd_used??0);
+    const ytdAccrued=parseFloat(emp.ytd_accrued??0);
+    const empName=(emp.employee_name||emp.name||'').replace(/"/g,'&quot;');
+
+    return `<tr data-id="${empId}" data-name="${empName}">
+      <td style="text-align:center;padding:13px 8px">
+        <button onclick="toggleLedger(${empId},this)" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;padding:4px 6px;border-radius:4px;transition:all .15s" title="View ledger">▶</button>
+      </td>
+      <td><div class="emp-name">${emp.employee_name||emp.name||'Unknown'}</div><div class="emp-sub">PIN: ${emp.pin||empId}</div></td>
+      <td>${emp.department||'—'}</td>
+      <td>${emp.job_title||'—'}</td>
+      <td style="text-align:center"><span class="mono ${balClass(sil)}" style="font-size:14px">${sil.toFixed(1)}</span></td>
+      <td style="text-align:center;font-family:'DM Mono',monospace;font-size:12.5px;color:#dc2626;font-weight:600">${ytdUsed>0?'-'+ytdUsed.toFixed(1):'<span style="color:var(--text-muted)">—</span>'}</td>
+      <td style="text-align:center;font-family:'DM Mono',monospace;font-size:12.5px;color:#15803d;font-weight:600">${ytdAccrued>0?'+'+ytdAccrued.toFixed(1):'<span style="color:var(--text-muted)">—</span>'}</td>
+      <td><button class="btn" style="padding:5px 10px;font-size:11.5px" onclick="openAddEntryModal(${empId})">+ Entry</button></td>
+    </tr>
+    <tr class="ledger-row" id="ledger-${empId}">
+      <td colspan="8" style="padding:0">
+        <div class="ledger-panel" id="ledger-panel-${empId}">
+          <div class="ledger-header">
+            <span class="ledger-title">SIL History</span>
+            <span style="font-size:12px;color:var(--text-muted)" id="ledger-count-${empId}"></span>
+          </div>
+          <div class="ledger-tabs">
+            <button class="ledger-tab active" onclick="switchLedgerView(${empId},'table',this)">Table</button>
+            <button class="ledger-tab" onclick="switchLedgerView(${empId},'calendar',this)">Calendar</button>
+          </div>
+          <div id="ledger-table-${empId}"><div class="ledger-empty"><span class="spinner"></span> Loading...</div></div>
+          <div class="cal-wrap" id="ledger-cal-${empId}"></div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const from=start+1,to=Math.min(start+ps,filteredData.length);
+  document.getElementById('pageInfo').textContent=`${from}–${to} of ${filteredData.length} records`;
+  pBar.style.display='flex';
+  let btns=`<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+  getPageRange(currentPage,total).forEach(p=>{
+    if(p==='...')btns+=`<span style="padding:0 4px;color:var(--text-muted)">…</span>`;
+    else btns+=`<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  });
+  btns+=`<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===total?'disabled':''}>›</button>`;
+  document.getElementById('pageControls').innerHTML=btns;
+}
+
+function getPageRange(c,t){if(t<=7)return Array.from({length:t},(_,i)=>i+1);if(c<=4)return[1,2,3,4,5,'...',t];if(c>=t-3)return[1,'...',t-4,t-3,t-2,t-1,t];return[1,'...',c-1,c,c+1,'...',t];}
+function goPage(p){const t=Math.ceil(filteredData.length/getPageSize());if(p<1||p>t)return;currentPage=p;renderTable();}
+
+// ── LEDGER VIEW SWITCH ──
+function switchLedgerView(empId,view,btn){
+  btn.parentElement.querySelectorAll('.ledger-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  const tableEl=document.getElementById(`ledger-table-${empId}`);
+  const calEl=document.getElementById(`ledger-cal-${empId}`);
+  if(view==='table'){tableEl.style.display='block';calEl.classList.remove('active');}
+  else{tableEl.style.display='none';calEl.classList.add('active');renderCalendar(empId);}
+}
+
+// ── LEDGER TOGGLE ──
+async function toggleLedger(empId,btn){
+  const row=document.getElementById(`ledger-${empId}`);
+  if(row.classList.contains('open')){row.classList.remove('open');btn.textContent='▶';btn.style.color='var(--text-muted)';return;}
+  row.classList.add('open');btn.textContent='▼';btn.style.color='var(--accent)';
+  if(openLedgers[empId]!==undefined){renderLedgerTable(empId,openLedgers[empId]);return;}
+  try{
+    const res=await fetch(`${GET_LEDGER_URL}?employee_id=${empId}`);
+    let entries=[];
+    if(res.ok){const text=await res.text();if(text&&text.trim()){try{const data=JSON.parse(text);entries=Array.isArray(data)?data.map(i=>i.json??i):[];}catch(e){entries=[];}}}
+    openLedgers[empId]=entries;renderLedgerTable(empId,entries);
+  }catch{openLedgers[empId]=[];renderLedgerTable(empId,[]);}
+}
+
+function renderLedgerTable(empId,entries){
+  const countEl=document.getElementById(`ledger-count-${empId}`);
+  const content=document.getElementById(`ledger-table-${empId}`);
+  if(countEl)countEl.textContent=`${entries.length} transaction${entries.length!==1?'s':''}`;
+  if(!entries.length){content.innerHTML=`<div class="ledger-empty">No ledger entries yet. Use <strong>+ Entry</strong> to add the first entry.</div>`;return;}
+  content.innerHTML=`<table class="ledger-table"><thead><tr><th>Date</th><th>Type</th><th style="text-align:right">Amount</th><th style="text-align:right">Running Balance</th><th>Notes</th><th>TRF</th></tr></thead><tbody>${entries.map(e=>{
+    const amt=parseFloat(e.amount),bal=parseFloat(e.running_balance);
+    return`<tr><td class="mono">${fmtDate(e.date)}</td><td><span class="type-badge type-${e.type}">${e.type.replace('_',' ')}</span></td><td style="text-align:right" class="mono ${amt>=0?'amt-pos':'amt-neg'}">${amt>=0?'+':''}${amt.toFixed(2)}</td><td style="text-align:right" class="mono ${balClass(bal)}">${bal.toFixed(2)}</td><td style="color:var(--text-secondary);font-size:12px">${e.notes||'—'}</td><td style="font-size:12px">${e.trf_uid?`<span class="mono" style="font-size:11px;color:var(--accent)">${e.trf_uid}</span>`:'—'}</td></tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+// ── CALENDAR ──
+function renderCalendar(empId){
+  const calEl=document.getElementById(`ledger-cal-${empId}`);
+  const entries=openLedgers[empId]||[];
+  if(!calendarMonths[empId]){const now=new Date();calendarMonths[empId]={year:now.getFullYear(),month:now.getMonth()};}
+  const cm=calendarMonths[empId];
+  const year=cm.year,month=cm.month;
+
+  // Map entries to day
+  const dayMap={};
+  entries.forEach(e=>{
+    const d=new Date(e.date);
+    if(d.getFullYear()===year&&d.getMonth()===month){
+      const day=d.getDate();
+      if(!dayMap[day])dayMap[day]=[];
+      dayMap[day].push(e);
     }
-    loadDepartments();
+  });
 
-    // ── Dark mode ──
-    function toggleDark() {
-      const isDark = document.body.classList.toggle('dark');
-      document.getElementById('darkIcon').textContent  = isDark ? '☀️' : '🌙';
-      document.getElementById('darkLabel').textContent = isDark ? 'Light' : 'Dark';
-      try {
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-      } catch (err) {
-        console.warn("localStorage not accessible:", err);
-      }
-    }
-    
-    try {
-      if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('dark');
-        document.getElementById('darkIcon').textContent  = '☀️';
-        document.getElementById('darkLabel').textContent = 'Light';
-      }
-    } catch (err) {
-      console.warn("localStorage not accessible:", err);
-    }
+  const firstDay=new Date(year,month,1).getDay();
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const today=new Date();
+  const isThisMonth=today.getFullYear()===year&&today.getMonth()===month;
 
-    function togglePin(btn) {
-      const input = document.getElementById('employee_pin');
-      const show  = input.type === 'password';
-      input.type  = show ? 'text' : 'password';
-      btn.textContent = show ? '🙈' : '👁';
-    }
+  let html=`<div class="cal-nav">
+    <button class="cal-nav-btn" onclick="calNav(${empId},-1)">‹</button>
+    <span class="cal-month-label">${MONTHS[month]} ${year}</span>
+    <button class="cal-nav-btn" onclick="calNav(${empId},1)">›</button>
+  </div>`;
 
-    // ── Reason counter ──
-    function updateReasonCounter() {
-      const len     = document.getElementById('reason').value.length;
-      const counter = document.getElementById('reasonCounter');
-      counter.textContent = `${len} / 100`;
-      if (len >= 90) {
-        counter.style.color = '#dc2626';
-      } else if (len >= 75) {
-        counter.style.color = '#b45309';
-      } else {
-        counter.style.color = '';
-      }
-    }
+  html+=`<div class="cal-grid">`;
+  DAYS_SHORT.forEach(d=>{html+=`<div class="cal-hdr">${d}</div>`;});
 
-    // ── File Validation ──
-    function validateFile(f) {
-      const ext = '.' + f.name.split('.').pop().toLowerCase();
-      if (!ALLOWED_EXTS.includes(ext)) { showToast('Only PDF, PNG, DOC, and DOCX files are allowed.','error'); return false; }
-      if (f.type && !ALLOWED_TYPES.includes(f.type)) { showToast('Only PDF, PNG, DOC, and DOCX files are allowed.','error'); return false; }
-      if (f.size > MAX_FILE_SIZE) { showToast('File must be 10MB or less.','error'); return false; }
-      return true;
-    }
+  for(let i=0;i<firstDay;i++) html+=`<div class="cal-day empty"></div>`;
 
-    // ── Leave Type Change ──
-    document.getElementById('request_type').addEventListener('change', function () {
-      const type = this.value;
-      const creditsDropdown = document.getElementById('use_credits');
-      const isNoCredits = NO_CREDITS_TYPES.includes(type);
-      if (isNoCredits) {
-        creditsDropdown.value = 'No'; creditsDropdown.disabled = true;
-        updateCreditsInfo();
-        showToast(`${type} selected — leave credits are not applicable.`,'success');
-      } else {
-        creditsDropdown.disabled = false;
-        if (creditsDropdown.value === 'No' && !isNoCredits) { creditsDropdown.value = ''; updateCreditsInfo(); }
-      }
-      checkDuration();
-    });
+  for(let d=1;d<=daysInMonth;d++){
+    const dow=new Date(year,month,d).getDay();
+    const isToday=isThisMonth&&today.getDate()===d;
+    const isWeekend=dow===0||dow===6;
+    let cls='cal-day';
+    if(isToday)cls+=' today';
+    if(isWeekend)cls+=' weekend';
 
-    // ── SIL Amount Validation ──
-    function validateSilAmount() {
-      const silInput = document.getElementById('sil_amount');
-      const silRemaining = document.getElementById('silRemaining');
-      const entered = parseFloat(silInput.value) || 0;
-      const remaining = currentSIL - entered;
-      if (entered <= 0) { silInput.style.borderColor='#dc2626'; silRemaining.className='sil-remaining err'; silRemaining.textContent='⚠️ Please enter a valid amount greater than 0.'; return; }
-      if (entered > currentSIL) { silInput.style.borderColor='#dc2626'; silRemaining.className='sil-remaining err'; silRemaining.textContent=`❌ Exceeds available balance. You only have ${currentSIL.toFixed(1)} SIL day(s).`; return; }
-      if ((entered * 2) % 1 !== 0) { silInput.style.borderColor='#f59e0b'; silRemaining.className='sil-remaining warn'; silRemaining.textContent='⚠️ Please use 0.5 increments (e.g. 0.5, 1.0, 1.5).'; return; }
-      silInput.style.borderColor = '';
-      if (remaining <= 1) { silRemaining.className='sil-remaining warn'; silRemaining.textContent=`⚠️ After deduction: ${remaining.toFixed(1)} SIL day(s) remaining.`; }
-      else { silRemaining.className='sil-remaining ok'; silRemaining.textContent=`✅ After deduction: ${remaining.toFixed(1)} SIL day(s) remaining.`; }
-    }
-
-    // ── Credits Info ──
-    function updateCreditsInfo() {
-      const val = document.getElementById('use_credits').value;
-      const box = document.getElementById('creditsInfo');
-      const silField = document.getElementById('silAmountField');
-      const silAvailable = document.getElementById('silAvailable');
-      const silInput = document.getElementById('sil_amount');
-      const silRemaining = document.getElementById('silRemaining');
-      if (val === 'Yes') {
-        box.innerHTML = `🏖️ <strong>${currentSIL.toFixed(1)} SIL day${currentSIL!==1?'s':''}</strong> currently available. Enter how many credits you want to use below.`;
-        box.className = 'credits-info show'; silField.className = 'sil-amount-field show';
-        silAvailable.textContent = currentSIL.toFixed(1); silInput.max = currentSIL;
-        silInput.value = ''; silInput.style.borderColor = ''; silRemaining.className = 'sil-remaining';
-      } else if (val === 'No') {
-        box.innerHTML = `ℹ️ Leave credits will <strong>not</strong> be deducted. This leave may be treated as unpaid depending on HR approval.`;
-        box.className = 'credits-info show'; silField.className = 'sil-amount-field';
-        silInput.value = ''; silInput.style.borderColor = ''; silRemaining.className = 'sil-remaining';
-      } else {
-        box.className = 'credits-info'; silField.className = 'sil-amount-field';
-        silInput.value = ''; silRemaining.className = 'sil-remaining';
-      }
-    }
-
-    // ── Verify Employee ──
-    async function verifyEmployee() {
-      const name = document.getElementById('employee_name').value.trim();
-      const pin  = document.getElementById('employee_pin').value.trim();
-      if (!name) return showToast('Please enter your full name first.','error');
-      if (!pin)  return showToast('Please enter your PIN first.','error');
-
-      const card = document.getElementById('employeeCard');
-      const error = document.getElementById('employeeError');
-      const loading = document.getElementById('verifyLoading');
-      const btn = document.getElementById('verifyBtn');
-
-      card.classList.remove('show'); error.classList.remove('show');
-      loading.classList.add('show'); btn.disabled = true;
-      employeeVerified = false; verifiedEmployeeId = null;
-
-      try {
-        const res  = await fetch(`${VERIFY_URL}?pin=${encodeURIComponent(pin)}&name=${encodeURIComponent(name)}`);
-        const raw  = await res.json();
-        const data = Array.isArray(raw) ? raw[0] : raw;
-        loading.classList.remove('show'); btn.disabled = false;
-
-        // Clean up the names (lowercase, remove extra spaces)
-        const dbName    = (data.name || '').trim().toLowerCase().replace(/\s+/g, ' ');
-        const inputName = name.trim().toLowerCase().replace(/\s+/g, ' ');
-        
-        const dbWords = dbName.split(' ');
-        const inputWords = inputName.split(' ');
-
-        // Smart match: check exact OR first+last word matches
-        const nameMatch = (inputName === dbName) || (
-          inputWords.length >= 2 &&
-          inputWords[0] === dbWords[0] && 
-          inputWords[inputWords.length - 1] === dbWords[dbWords.length - 1] &&
-          inputWords.every(word => dbWords.includes(word))
-        );
-
-        if (data.found && nameMatch) {
-          employeeVerified   = true;
-          currentSIL         = parseFloat(data.sil) || 0;
-          verifiedEmployeeId = data.id;
-
-          // Auto-corrects the input box to the exact DB format (restores middle names)
-          document.getElementById('employee_name').value = data.name;
-
-          document.getElementById('verifiedName').textContent = data.name;
-          document.getElementById('verifiedMeta').textContent = `${data.job_title||'—'} · ${data.department||'—'}`;
-
-          const silBadge = document.getElementById('silBadge');
-          document.getElementById('silText').textContent = `${currentSIL.toFixed(1)} SIL day${currentSIL!==1?'s':''} remaining`;
-          silBadge.className = currentSIL === 0 ? 'sil-badge empty' : currentSIL <= 2 ? 'sil-badge low' : 'sil-badge';
-
-          if (data.department && window.deptMap) document.getElementById('department').value = window.deptMap[data.department] || data.department;
-          if (data.job_title) document.getElementById('job_title').value = data.job_title;
-          if (data.email)     document.getElementById('email').value     = data.email;
-
-          card.classList.add('show');
-          if (document.getElementById('use_credits').value === 'Yes') updateCreditsInfo();
-
-        } else if (data.found) {
-          error.textContent = '❌ Name does not match our records. Please type your First and Last name.';
-          error.classList.add('show');
-        } else {
-          error.textContent = '❌ Employee not found. Please check your name and PIN and try again.';
-          error.classList.add('show');
-        }
-      } catch {
-        loading.classList.remove('show'); btn.disabled = false;
-        error.textContent = '❌ Could not verify at this time. Please try again.';
-        error.classList.add('show');
-      }
-    }
-
-    document.getElementById('employee_pin').addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); verifyEmployee(); }
-    });
-
-    ['employee_name','employee_pin'].forEach(id => {
-      document.getElementById(id).addEventListener('input', () => {
-        employeeVerified = false; currentSIL = 0; verifiedEmployeeId = null;
-        document.getElementById('employeeCard').classList.remove('show');
-        document.getElementById('employeeError').classList.remove('show');
-        document.getElementById('silAmountField').className = 'sil-amount-field';
-        document.getElementById('sil_amount').value = '';
-        document.getElementById('silRemaining').className = 'sil-remaining';
+    let tags='';
+    if(dayMap[d]){
+      dayMap[d].forEach(e=>{
+        const amt=parseFloat(e.amount);
+        tags+=`<span class="cal-tag ${e.type}" title="${e.type.replace('_',' ')}: ${amt>=0?'+':''}${amt.toFixed(1)}${e.notes?' — '+e.notes:''}">${amt>=0?'+':''}${amt.toFixed(1)}</span>`;
       });
-    });
+    }
 
-    // ── Working hours calculator (FIXED) ──
-    function calculateWorkingHours(startDate, endDate) {
-      let totalMinutes = 0;
-      let current = new Date(startDate);
-      
-      while (current < endDate) {
-        if (current.getDay() === 0 || current.getDay() === 6) { 
-          current.setDate(current.getDate()+1); 
-          current.setHours(8,0,0,0); 
-          continue; 
-        }
-        
-        let dayStart   = new Date(current); dayStart.setHours(8,0,0,0);
-        let lunchStart = new Date(current); lunchStart.setHours(12,0,0,0);
-        let lunchEnd   = new Date(current); lunchEnd.setHours(13,0,0,0);
-        let dayEnd     = new Date(current); dayEnd.setHours(17,0,0,0);
-        
-        let c = new Date(current);
-        if (c < dayStart) c = new Date(dayStart);
-        
-        let e = (endDate < dayEnd) ? endDate : dayEnd;
-        
-        if (c < e) {
-          if (c < lunchStart) {
-            let mEnd = (e < lunchStart) ? e : lunchStart;
-            totalMinutes += (mEnd - c) / 60000;
-          }
-          if (e > lunchEnd) {
-            let aStart = (c > lunchEnd) ? c : lunchEnd;
-            totalMinutes += (e - aStart) / 60000;
-          }
-        }
-        
-        current.setDate(current.getDate()+1); 
-        current.setHours(8,0,0,0);
+    html+=`<div class="${cls}"><span class="cal-num">${d}</span>${tags}</div>`;
+  }
+
+  html+=`</div>`;
+  calEl.innerHTML=html;
+}
+
+function calNav(empId,dir){
+  const cm=calendarMonths[empId];
+  cm.month+=dir;
+  if(cm.month<0){cm.month=11;cm.year--;}
+  if(cm.month>11){cm.month=0;cm.year++;}
+  renderCalendar(empId);
+}
+
+// ── ADD ENTRY MODAL ──
+let entryTargetEmpId=null;
+function openAddEntryModal(empId){
+  entryTargetEmpId=empId;
+  document.getElementById('entryModal').classList.add('active');
+  document.getElementById('entry_date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('entry_type').value='';
+  document.getElementById('entry_amount').value='';
+  document.getElementById('entry_notes').value='';
+  document.getElementById('entry_trf_uid').value='';
+  const empGroup=document.getElementById('entryEmpGroup'),empSel=document.getElementById('entry_emp_id');
+  if(empId){empGroup.style.display='none';empSel.value=empId;const r=document.querySelector(`tr[data-id="${empId}"]`);document.getElementById('entryModalTitle').textContent=`Add Entry — ${r?r.getAttribute('data-name'):''}`;}
+  else{empGroup.style.display='flex';document.getElementById('entryModalTitle').textContent='Add Ledger Entry';populateEmpDropdown(empSel);}
+}
+function closeEntryModal(){document.getElementById('entryModal').classList.remove('active');entryTargetEmpId=null;}
+
+async function saveEntry(){
+  const empId=entryTargetEmpId||document.getElementById('entry_emp_id').value;
+  const date=document.getElementById('entry_date').value;
+  const type=document.getElementById('entry_type').value;
+  const amount=document.getElementById('entry_amount').value;
+  if(!empId||!date||!type||amount===''){showToast('Employee, Date, Type, and Amount are required.','error');return;}
+  const btn=document.getElementById('saveEntryBtn');btn.textContent='Saving...';btn.disabled=true;
+  try{
+    const res=await fetch(ADD_ENTRY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employee_id:Number(empId),date,type,amount:parseFloat(amount),notes:document.getElementById('entry_notes').value||null,trf_uid:document.getElementById('entry_trf_uid').value||null})});
+    if(res.ok){
+      showToast('Entry added!');closeEntryModal();
+      delete openLedgers[empId];
+      const lr=document.getElementById(`ledger-${empId}`);
+      if(lr&&lr.classList.contains('open')){
+        document.getElementById(`ledger-table-${empId}`).innerHTML='<div class="ledger-empty"><span class="spinner"></span> Reloading...</div>';
+        try{const r=await fetch(`${GET_LEDGER_URL}?employee_id=${empId}`);let entries=[];if(r.ok){const text=await r.text();if(text&&text.trim()){try{const data=JSON.parse(text);entries=Array.isArray(data)?data.map(i=>i.json??i):[];}catch(e){}}}openLedgers[empId]=entries;renderLedgerTable(empId,entries);const calEl=document.getElementById(`ledger-cal-${empId}`);if(calEl&&calEl.classList.contains('active'))renderCalendar(empId);}catch{renderLedgerTable(empId,[]);}
       }
-      
-      return totalMinutes / 480; 
-    }
+      await loadSILData();
+    }else showToast('Failed to add entry.','error');
+  }catch{showToast('Network error.','error');}
+  finally{btn.textContent='Save Entry';btn.disabled=false;}
+}
 
-    // ── Duration check ──
-    function checkDuration() {
-      const start  = document.getElementById('start_time').value;
-      const end    = document.getElementById('end_time').value;
-      const type   = document.getElementById('request_type').value;
-      const banner = document.getElementById('durationBanner');
-      const icon   = document.getElementById('durationIcon');
-      const msg    = document.getElementById('durationMsg');
-      if (!start || !end) { banner.className = 'duration-banner'; return; }
-      const startDate = new Date(start), endDate = new Date(end);
-      if (endDate <= startDate) { banner.className = 'duration-banner'; return; }
-      
-      if (HOURLY_TYPES.includes(type)) {
-        const diffMins = Math.round((endDate - startDate) / 60000);
-        const hours = Math.floor(diffMins/60), mins = diffMins%60;
-        
-        let display = '';
-        if (hours > 0 && mins > 0) display = `${hours}h ${mins}m (${diffMins} mins)`;
-        else if (hours > 0) display = `${hours}h (${diffMins} mins)`;
-        else display = `${mins} mins`;
+// ── ADD EMPLOYEE MODAL ──
+function openAddEmployeeModal(){
+  document.getElementById('addEmpModal').classList.add('active');
+  document.getElementById('new_reg_date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('new_opening_bal').value='0';
+  document.getElementById('new_notes').value='';
+  populateEmpDropdown(document.getElementById('new_emp_id'));
+}
+function closeAddEmployeeModal(){document.getElementById('addEmpModal').classList.remove('active');}
 
-        const labels = {Overtime:'🕐 Overtime',Undertime:'🕑 Undertime',Tardiness:'⏰ Tardiness'};
-        icon.textContent = labels[type]?.split(' ')[0] || '🕐';
-        msg.textContent  = `${type} duration: ${display}.`;
-        banner.className = 'duration-banner info show'; return;
-      }
-      
-      const workingDays = calculateWorkingHours(startDate, endDate);
-      const rounded = Math.round(workingDays * 10) / 10;
-      if (workingDays > MAX_DAYS) { icon.textContent='🚫'; msg.textContent=`Leave duration is ${rounded} working day(s) — exceeds the 14-day maximum.`; banner.className='duration-banner error show'; }
-      else if (workingDays > 7) { icon.textContent='⚠️'; msg.textContent=`Leave duration is ${rounded} working day(s) — approaching the 14-day limit.`; banner.className='duration-banner warning show'; }
-      else { icon.textContent='📅'; msg.textContent=`Leave duration: ${rounded} working day(s).`; banner.className='duration-banner info show'; }
-    }
+async function saveNewEmployee(){
+  const empId=document.getElementById('new_emp_id').value;
+  const regDate=document.getElementById('new_reg_date').value;
+  if(!empId||!regDate){showToast('Employee and Regularization Date are required.','error');return;}
+  const btn=document.getElementById('saveNewEmpBtn');btn.textContent='Adding...';btn.disabled=true;
+  try{
+    const res=await fetch(ADD_ENTRY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employee_id:Number(empId),date:regDate,type:'opening',amount:parseFloat(document.getElementById('new_opening_bal').value)||0,notes:document.getElementById('new_notes').value||'Opening balance upon regularization',trf_uid:null})});
+    if(res.ok){showToast('Employee added to SIL ledger!');closeAddEmployeeModal();await loadSILData();}
+    else showToast('Failed.','error');
+  }catch{showToast('Network error.','error');}
+  finally{btn.textContent='Add to Ledger';btn.disabled=false;}
+}
 
-    document.getElementById('start_time').addEventListener('change', checkDuration);
-    document.getElementById('end_time').addEventListener('change', checkDuration);
+function populateEmpDropdown(sel){
+  const cur=sel.value;sel.innerHTML='<option value="">— Select Employee —</option>';
+  allData.forEach(emp=>{const id=emp.id||emp.employee_id;const o=document.createElement('option');o.value=id;o.textContent=emp.employee_name||emp.name||`ID ${id}`;sel.appendChild(o);});
+  if(cur)sel.value=cur;
+}
 
-    // ── File upload ──
-    const fileInput = document.getElementById('supporting_doc');
-    const fileDrop  = document.getElementById('fileDrop');
-    const fileChip  = document.getElementById('fileChip');
-    const fileName  = document.getElementById('fileName');
+document.getElementById('entryModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeEntryModal();});
+document.getElementById('addEmpModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAddEmployeeModal();});
 
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files[0]) { if (!validateFile(fileInput.files[0])) { fileInput.value=''; return; } showFile(fileInput.files[0]); }
-    });
-    fileDrop.addEventListener('dragover',  e => { e.preventDefault(); fileDrop.classList.add('dragover'); });
-    fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('dragover'));
-    fileDrop.addEventListener('drop', e => {
-      e.preventDefault(); fileDrop.classList.remove('dragover');
-      const f = e.dataTransfer.files[0];
-      if (f) { if (!validateFile(f)) return; fileInput.files = e.dataTransfer.files; showFile(f); }
-    });
-
-    function showFile(f) { fileName.textContent = f.name; fileChip.classList.add('show'); fileDrop.style.display='none'; }
-    function clearFile() { fileInput.value=''; fileChip.classList.remove('show'); fileDrop.style.display=''; }
-
-    function showToast(msg, type='success') {
-      const t = document.getElementById('toast');
-      document.getElementById('toastIcon').textContent = type==='success' ? '✔' : '✖';
-      document.getElementById('toastMsg').textContent  = msg;
-      t.className = `toast ${type} show`;
-      setTimeout(() => t.classList.remove('show'), 4500);
-    }
-
-    // ── Pre-Submit Validation & Modal ──
-    function initiateSubmission() {
-      const get = id => document.getElementById(id).value.trim();
-
-      if (!employeeVerified) return showToast('Please verify your identity first.','error');
-
-      const requestType = get('request_type');
-      const useCredits  = get('use_credits');
-      const isHourly    = HOURLY_TYPES.includes(requestType);
-      const isNoCredits = NO_CREDITS_TYPES.includes(requestType);
-
-      const values = {
-        employee_name: get('employee_name'),
-        employee_pin:  get('employee_pin'),
-        employee_id:   verifiedEmployeeId,
-        department:    get('department'),
-        job_title:     get('job_title') || 'N/A', 
-        email:         get('email'),
-        request_type:  requestType,
-        use_credits:   useCredits,
-        sil_amount:    get('sil_amount') || '0',
-        start_time:    get('start_time'),
-        end_time:      get('end_time'),
-        reason:        get('reason') || 'N/A',
-        company_id:    get('company_id'),
-      };
-
-      if (!values.employee_name) return showToast('Please enter your full name.','error');
-      if (!values.employee_pin)  return showToast('Please enter your PIN.','error');
-      if (!values.department)    return showToast('Please select your department.','error');
-      if (!values.email || !values.email.includes('@')) return showToast('Please enter a valid email.','error');
-      if (!values.request_type)  return showToast('Please select a leave type.','error');
-      if (!values.start_time)    return showToast('Please enter the start date & time.','error');
-      if (!values.end_time)      return showToast('Please enter the end date & time.','error');
-      if (new Date(values.end_time) <= new Date(values.start_time)) return showToast('End time must be after start time.','error');
-
-      if (!isHourly) {
-        const workingDays = calculateWorkingHours(new Date(values.start_time), new Date(values.end_time));
-        if (workingDays > MAX_DAYS) return showToast('Leave duration exceeds 14 working days.','error');
-      }
-
-      if (!isNoCredits) {
-        if (!values.use_credits) return showToast('Please select whether to use leave credits.','error');
-        if (values.use_credits === 'Yes') {
-          const silAmt = parseFloat(values.sil_amount) || 0;
-          if (silAmt <= 0) return showToast('Please enter how many SIL credits to use.','error');
-          if ((silAmt * 2) % 1 !== 0) return showToast('SIL amount must be in 0.5 increments.','error');
-          if (silAmt > currentSIL) return showToast(`You only have ${currentSIL.toFixed(1)} SIL day(s) available.`,'error');
-        }
-      }
-
-      if (fileInput.files[0] && !validateFile(fileInput.files[0])) return;
-
-      const fd = new FormData();
-      Object.entries(values).forEach(([k, v]) => {
-        if (k === 'start_time' || k === 'end_time') fd.append(k, new Date(v).toISOString());
-        else fd.append(k, v ?? '');
-      });
-      if (fileInput.files[0]) fd.append('supporting_doc', fileInput.files[0], fileInput.files[0].name);
-
-      // Store globally for execution
-      pendingFormData = fd;
-
-      // Formatting helper for the summary
-      const formatDt = (dStr) => {
-        const d = new Date(dStr);
-        return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
-      };
-
-      const creditsText = values.use_credits === 'Yes' ? `Yes (${values.sil_amount} days)` : values.use_credits;
-      const fileText = fileInput.files[0] ? fileInput.files[0].name : 'None';
-
-      const summaryHtml = `
-        <div class="summary-row"><span class="summary-label">Name:</span><span class="summary-value">${values.employee_name}</span></div>
-        <div class="summary-row"><span class="summary-label">Leave Type:</span><span class="summary-value">${values.request_type}</span></div>
-        <div class="summary-row"><span class="summary-label">Start:</span><span class="summary-value">${formatDt(values.start_time)}</span></div>
-        <div class="summary-row"><span class="summary-label">End:</span><span class="summary-value">${formatDt(values.end_time)}</span></div>
-        <div class="summary-row"><span class="summary-label">Use Credits:</span><span class="summary-value">${creditsText}</span></div>
-        <div class="summary-row"><span class="summary-label">Reason:</span><span class="summary-value" style="font-weight:400;">${values.reason}</span></div>
-        <div class="summary-row"><span class="summary-label">Attachment:</span><span class="summary-value">${fileText}</span></div>
-      `;
-
-      document.getElementById('summaryBox').innerHTML = summaryHtml;
-      document.getElementById('confirmationModal').classList.add('active');
-    }
-
-    function closeConfirmation() {
-      document.getElementById('confirmationModal').classList.remove('active');
-    }
-
-    // ── Actual Submission ──
-    async function executeSubmission() {
-      const btn = document.getElementById('confirmSubmitBtn');
-      const initBtn = document.getElementById('initSubmitBtn');
-      
-      btn.disabled = true; 
-      btn.innerHTML = '<span class="spinner"></span>Submitting…';
-      initBtn.disabled = true;
-
-      try {
-        const res = await fetch(WEBHOOK, { method: 'POST', body: pendingFormData });
-        if (res.ok) {
-          closeConfirmation();
-          document.getElementById('leaveForm').style.display = 'none';
-          document.getElementById('successState').style.display = 'block';
-          showToast('Leave request submitted successfully!','success');
-        } else {
-          showToast(`Submission failed (${res.status}). Please try again.`,'error');
-        }
-      } catch {
-        showToast('Network error. Please check your connection.','error');
-      } finally {
-        btn.disabled = false; 
-        btn.textContent = 'Confirm & Submit';
-        initBtn.disabled = false;
-      }
-    }
-  </script>
+window.addEventListener('DOMContentLoaded',loadSILData);
+</script>
 </body>
 </html>
